@@ -1,0 +1,61 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: "Stichwerk Display";
+  src: url("/fonts/montserrat-800.woff") format("woff");
+  font-weight: 800;
+  font-display: swap;
+}
+
+/* Denim and mustard top-stitching: the colours of a well-worn pair of jeans. */
+@theme {
+  --color-denim-950: #172033;
+  --color-denim-900: #25324a;
+  --color-denim-700: #3a4d6e;
+  --color-denim-500: #6d80a3;
+  --color-denim-200: #cdd5e3;
+  --color-denim-100: #e3e8f0;
+  --color-denim-50: #f2f4f8;
+  --color-thread-600: #c98a12;
+  --color-thread-500: #e2a42b;
+  --color-thread-100: #fbefd3;
+  --color-ink: #1b2230;
+  --font-display: "Stichwerk Display", "Montserrat", system-ui, sans-serif;
+  --font-sans: system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-denim-50);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+/* The one decorative device: a row of top-stitching under the header. */
+.topstitch {
+  background-image: linear-gradient(
+    to right,
+    var(--color-thread-500) 0 60%,
+    transparent 60% 100%
+  );
+  background-size: 10px 2px;
+  background-repeat: repeat-x;
+  height: 2px;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-thread-500);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
+}
