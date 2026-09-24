@@ -1,6 +1,6 @@
 import type { GeneratedDesign } from "../engine/compose";
 import { useLang, useT } from "../i18n";
-import { threadInfo } from "../designer/palette";
+import { colorLabel } from "../designer/palette";
 import { Panel } from "./fields";
 import { MachinePanel } from "./MachinePanel";
 
@@ -40,12 +40,11 @@ export function InfoPanels({ design, fitsHoop }: { design: GeneratedDesign; fits
         <Panel title={t("sequence.title")}>
           <ol className="flex flex-col gap-1.5 text-sm">
             {design.blockColors.map((hex, i) => {
-              const info = threadInfo(hex);
               return (
                 <li key={i} className="flex items-center gap-2">
                   <span className="w-5 text-right tabular-nums text-denim-500">{i + 1}</span>
                   <span className="h-4 w-4 rounded-full ring-1 ring-denim-200" style={{ background: hex }} />
-                  <span>{info ? `${info.name} (${info.code})` : hex}</span>
+                  <span>{colorLabel(hex)}</span>
                 </li>
               );
             })}

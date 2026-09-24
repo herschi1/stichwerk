@@ -55,7 +55,7 @@ export const de = {
   "edit.angle": "Stichwinkel (°)",
   "edit.density": "Reihenabstand (mm)",
   "edit.underlay": "Unterlage",
-  "edit.color": "Garnfarbe (Brother)",
+  "edit.color": "Garnfarbe",
 
   "mode.fill": "Füllung",
   "mode.fill-outline": "Füllung mit Kontur",
@@ -77,6 +77,14 @@ export const de = {
   "fabricProfile.hint.woven": "Reißvlies (Tear-away) reicht meist.",
   "fabricProfile.hint.canvas":
     "Fester Stoff zieht sich kaum zusammen, Reißvlies genügt. Stichwerk arbeitet mit weniger Zugausgleich.",
+
+  "threads.range": "Garnsortiment",
+  "threads.mine": "Meine Garne ({n})",
+  "threads.search": "Nr. / Name",
+  "threads.addMine": "☆ Zu meinen Garnen",
+  "threads.inMine": "★ In meinen Garnen",
+  "threads.mineEmpty": "Noch keine eigenen Garne. Wähle oben dein Sortiment, such die Nummer von deiner Spule und markiere sie mit dem Stern. Dann siehst du hier nur Garne, die du wirklich hast.",
+  "threads.noResults": "Keine Farbe gefunden.",
 
   "svg.colors": "Farben",
   "svg.fileColors": "Farben aus der Datei",

@@ -14,7 +14,7 @@ import {
   hasMachineError,
   machineErrorInfo,
 } from "../machine/errors";
-import { threadInfo } from "../designer/palette";
+import { colorLabel } from "../designer/palette";
 import { Panel } from "./fields";
 
 function ActionButton({
@@ -56,12 +56,6 @@ function Hint({ children, tone = "plain" }: { children: ReactNode; tone?: "plain
       {children}
     </p>
   );
-}
-
-function colorLabel(hex: string | undefined) {
-  if (!hex) return "?";
-  const info = threadInfo(hex);
-  return info ? `${info.name} (${info.code})` : hex;
 }
 
 export function MachinePanel({ design, fitsHoop }: { design: GeneratedDesign; fitsHoop: boolean }) {

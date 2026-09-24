@@ -3,7 +3,7 @@ import { persist } from "zustand/middleware";
 import { DEFAULT_FONT_ID } from "./fonts";
 import type { DesignElement, ShapeElement, SvgElement, TextElement } from "./types";
 import type { ImportedSvg } from "../io/svg";
-import { nearestBrotherColor } from "./palette";
+import { defaultColor, nearestThread } from "./palette";
 import { DEFAULT_FABRIC, type FabricProfileId } from "../engine/profiles";
 
 interface DesignState {
@@ -23,17 +23,14 @@ interface DesignState {
 
 const newId = () => Math.random().toString(36).slice(2, 10);
 
-/** Brother BLACK */
-const DEFAULT_COLOR = "#000000";
-
-const fillDefaults = {
+const fillDefaults = () => ({
+  color: defaultColor(),
   x: 0,
   y: 0,
-  color: DEFAULT_COLOR,
   mode: "fill" as const,
   density: 0.4,
   underlay: true,
-};
+});
 
 export const useDesignStore = create<DesignState>()(
   persist(
@@ -46,7 +43,7 @@ export const useDesignStore = create<DesignState>()(
       addText: () =>
         set((s) => {
           const el: TextElement = {
-            ...fillDefaults,
+            ...fillDefaults(),
             id: newId(),
             kind: "text",
             text: "Text",
@@ -64,7 +61,7 @@ export const useDesignStore = create<DesignState>()(
       addShape: () =>
         set((s) => {
           const el: ShapeElement = {
-            ...fillDefaults,
+            ...fillDefaults(),
             id: newId(),
             kind: "shape",
             shape: "heart",
@@ -77,15 +74,15 @@ export const useDesignStore = create<DesignState>()(
 
       addSvg: (svg, name) =>
         set((s) => {
-          // Start at 60 mm on the longer side, colours snapped to Brother threads.
+          // Start at 60 mm on the longer side, colours snapped to the preferred threads.
           const longer = Math.max(svg.width, svg.height) || 1;
           const width = (60 * svg.width) / longer;
           const el: SvgElement = {
-            ...fillDefaults,
+            ...fillDefaults(),
             id: newId(),
             kind: "svg",
             name,
-            parts: svg.parts.map((p) => ({ ...p, color: nearestBrotherColor(p.color) })),
+            parts: svg.parts.map((p) => ({ ...p, color: nearestThread(p.color).hex })),
             sourceWidth: svg.width,
             sourceHeight: svg.height,
             width,

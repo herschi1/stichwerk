@@ -57,7 +57,7 @@ export const en: Record<TranslationKey, string> = {
   "edit.angle": "Stitch angle (°)",
   "edit.density": "Row spacing (mm)",
   "edit.underlay": "Underlay",
-  "edit.color": "Thread colour (Brother)",
+  "edit.color": "Thread colour",
 
   "mode.fill": "Fill",
   "mode.fill-outline": "Fill with outline",
@@ -79,6 +79,14 @@ export const en: Record<TranslationKey, string> = {
   "fabricProfile.hint.woven": "Tear-away stabilizer is usually enough.",
   "fabricProfile.hint.canvas":
     "Firm fabric hardly pulls in, tear-away stabilizer is enough. Stichwerk uses less pull compensation.",
+
+  "threads.range": "Thread range",
+  "threads.mine": "My threads ({n})",
+  "threads.search": "No. / name",
+  "threads.addMine": "☆ Add to my threads",
+  "threads.inMine": "★ In my threads",
+  "threads.mineEmpty": "No threads of your own yet. Pick your range above, search for the number on your spool and mark it with the star. Then this list only shows threads you really own.",
+  "threads.noResults": "No colour found.",
 
   "svg.colors": "Colours",
   "svg.fileColors": "Colours from the file",

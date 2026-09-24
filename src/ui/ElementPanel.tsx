@@ -4,7 +4,7 @@ import { useT, type TFunction, type TranslationKey } from "../i18n";
 import { useDesignStore } from "../designer/useDesignStore";
 import { DEFAULT_FONT_ID, fontInfo, isFontAvailable, registerCustomFont } from "../designer/fonts";
 import { FontPicker } from "./FontPicker";
-import { BROTHER_PALETTE } from "../designer/palette";
+import { ColorPicker } from "./ColorPicker";
 import type { DesignElement, ShapeKind, StitchMode } from "../designer/types";
 import { Field, Group, NumField, Panel, inputClass } from "./fields";
 import { FABRIC_PROFILES, type FabricProfileId } from "../engine/profiles";
@@ -18,28 +18,6 @@ function elementLabel(el: DesignElement, t: TFunction): string {
     return t("label.text", { text: el.text.split("\n")[0] || t("label.emptyText") });
   if (el.kind === "svg") return t("label.svg", { name: el.name });
   return t(`shape.${el.shape}` as TranslationKey);
-}
-
-function Swatches({ value, onPick }: { value: string; onPick: (hex: string) => void }) {
-  return (
-    <div className="grid grid-cols-12 gap-1">
-      {BROTHER_PALETTE.map((c) => (
-        <button
-          key={c.hex + c.code}
-          type="button"
-          title={`${c.name} (${c.code})`}
-          aria-label={`${c.name} (${c.code})`}
-          aria-pressed={value === c.hex}
-          onClick={() => onPick(c.hex)}
-          className={
-            "aspect-square rounded-sm ring-1 " +
-            (value === c.hex ? "ring-2 ring-thread-500 ring-offset-1" : "ring-denim-200")
-          }
-          style={{ background: c.hex }}
-        />
-      ))}
-    </div>
-  );
 }
 
 export function ElementPanel({ onError }: { onError: (msg: string) => void }) {
@@ -395,7 +373,7 @@ export function ElementPanel({ onError }: { onError: (msg: string) => void }) {
 
             {(selected.kind !== "svg" || selected.singleColor) && (
               <Group label={t("edit.color")}>
-                <Swatches value={selected.color} onPick={(hex) => update(selected.id, { color: hex })} />
+                <ColorPicker value={selected.color} onPick={(hex) => update(selected.id, { color: hex })} />
               </Group>
             )}
           </div>
@@ -434,7 +412,7 @@ function SvgColorEditor({
       </div>
       {editing && (
         <div className="mt-2">
-          <Swatches
+          <ColorPicker
             value={editing}
             onPick={(hex) => {
               onReplace(editing, hex);
