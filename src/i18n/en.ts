@@ -188,6 +188,49 @@ export const en: Record<TranslationKey, string> = {
   "error.fontLoad": "The font could not be loaded. Check your internet connection.",
   "error.generic": "Something went wrong: {msg}",
 
+  "info.open":
+    "Info & licences",
+  "info.title":
+    "Info & licences",
+  "info.close":
+    "Close",
+  "info.about.title":
+    "About Stichwerk",
+  "info.about.text":
+    "Stichwerk is an independent, non-commercial hobby project for designing embroidery patterns for the Brother PP1 (SKiTCH). It is not affiliated with Brother Industries, Ltd. or Madeira Garnfabrik.",
+  "info.about.risk":
+    "Use at your own risk and without warranty. Thread colours on screen approximate the real thread; the number on the spool is what counts.",
+  "info.about.trademarks":
+    "Brother, SKiTCH and Artspira are trademarks of Brother Industries, Ltd.; Madeira, Polyneon and Frosted Matt are trademarks of Madeira Garnfabrik. The names are used for descriptive purposes only.",
+  "info.privacy.title":
+    "Privacy",
+  "info.privacy.local":
+    "Stichwerk collects no personal data. There is no account, no analytics, no tracking and no cookies. Designs, settings and your thread list are stored only in your own browser and never leave your computer. You can delete them at any time in your browser settings.",
+  "info.privacy.bluetooth":
+    "The connection to the embroidery machine runs directly via Bluetooth between your computer and the machine. No data is sent to third parties. Fonts are loaded from this site itself, not from Google.",
+  "info.privacy.hosting":
+    "This site is served by GitHub Pages (GitHub Inc.). When you open it, GitHub processes technically necessary data such as your IP address to deliver and secure the site. Details:",
+  "info.privacy.githubLink":
+    "GitHub privacy statement",
+  "info.licence.title":
+    "Licence and source code",
+  "info.licence.text":
+    "Stichwerk is free software under the GNU General Public License v3.0 or later. The complete source code is at",
+  "info.licence.respira":
+    "Machine protocol, PEN format and Brother colours from Respira by jhbruhn (Apache License 2.0)",
+  "info.licence.pyembroidery":
+    "PES export based on pyembroidery by Tatarize (MIT License)",
+  "info.licence.inkstitch":
+    "Madeira colour values from the Ink/Stitch palettes (GNU GPL v3.0)",
+  "info.licence.fonts":
+    "30 fonts from Google Fonts under the SIL Open Font License or Apache License 2.0, free to use even for embroidery you sell. Overview:",
+  "info.imprint.title":
+    "Disclosure under § 25 Austrian Media Act",
+  "info.imprint.owner":
+    "Media owner",
+  "info.imprint.purpose":
+    "Basic purpose: private, non-commercial website offering a tool for designing embroidery patterns.",
+
   "footer.credits":
-    "Fonts under free licences (OFL/Apache, see fonts/FONTS.md). PES export based on pyembroidery (MIT). Machine protocol based on Respira (Apache-2.0).",
+    "Stichwerk is free software (GPL-3.0) and an independent project, not affiliated with Brother or Madeira.",
 };

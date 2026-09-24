@@ -186,8 +186,51 @@ export const de = {
   "error.fontLoad": "Die Schrift konnte nicht geladen werden. Prüfe die Internetverbindung.",
   "error.generic": "Etwas ist schiefgelaufen: {msg}",
 
+  "info.open":
+    "Info & Lizenzen",
+  "info.title":
+    "Info & Lizenzen",
+  "info.close":
+    "Schließen",
+  "info.about.title":
+    "Über Stichwerk",
+  "info.about.text":
+    "Stichwerk ist ein unabhängiges, nicht kommerzielles Hobbyprojekt zum Gestalten von Stickmustern für die Brother PP1 (SKiTCH). Es steht in keiner Verbindung zu Brother Industries, Ltd. oder zur Madeira Garnfabrik.",
+  "info.about.risk":
+    "Die Nutzung erfolgt auf eigenes Risiko und ohne Gewähr. Die Garnfarben am Bildschirm sind Annäherungen an das echte Garn; maßgeblich ist die Nummer auf der Spule.",
+  "info.about.trademarks":
+    "Brother, SKiTCH und Artspira sind Marken der Brother Industries, Ltd.; Madeira, Polyneon und Frosted Matt sind Marken der Madeira Garnfabrik. Die Namen werden nur beschreibend verwendet.",
+  "info.privacy.title":
+    "Datenschutz",
+  "info.privacy.local":
+    "Stichwerk sammelt keine personenbezogenen Daten. Es gibt kein Konto, keine Analyse, kein Tracking und keine Cookies. Designs, Einstellungen und deine Garnliste werden nur im Speicher deines eigenen Browsers abgelegt und verlassen deinen Rechner nicht. Du kannst sie jederzeit über die Browsereinstellungen löschen.",
+  "info.privacy.bluetooth":
+    "Die Verbindung zur Stickmaschine läuft direkt per Bluetooth zwischen deinem Rechner und der Maschine. Dabei werden keine Daten an Dritte übertragen. Schriften werden von dieser Seite selbst geladen, nicht von Google.",
+  "info.privacy.hosting":
+    "Die Seite wird von GitHub Pages (GitHub Inc.) bereitgestellt. Beim Aufruf verarbeitet GitHub technisch notwendige Daten wie deine IP-Adresse, um die Seite auszuliefern und abzusichern. Details:",
+  "info.privacy.githubLink":
+    "Datenschutzerklärung von GitHub",
+  "info.licence.title":
+    "Lizenz und Quellcode",
+  "info.licence.text":
+    "Stichwerk ist freie Software unter der GNU General Public License v3.0 oder später. Der vollständige Quellcode liegt unter",
+  "info.licence.respira":
+    "Maschinenprotokoll, PEN-Format und Brother-Farben aus Respira von jhbruhn (Apache License 2.0)",
+  "info.licence.pyembroidery":
+    "PES-Export nach pyembroidery von Tatarize (MIT License)",
+  "info.licence.inkstitch":
+    "Madeira-Farbwerte aus den Paletten von Ink/Stitch (GNU GPL v3.0)",
+  "info.licence.fonts":
+    "30 Schriften von Google Fonts unter SIL Open Font License bzw. Apache License 2.0, frei nutzbar auch für verkaufte Stickereien. Übersicht:",
+  "info.imprint.title":
+    "Offenlegung gemäß § 25 Mediengesetz",
+  "info.imprint.owner":
+    "Medieninhaberin",
+  "info.imprint.purpose":
+    "Grundlegende Richtung: private, nicht kommerzielle Website mit einem Werkzeug zum Gestalten von Stickmustern.",
+
   "footer.credits":
-    "Schriften unter freien Lizenzen (OFL/Apache, siehe fonts/FONTS.md). PES-Export nach pyembroidery (MIT). Maschinenprotokoll nach Respira (Apache-2.0).",
+    "Stichwerk ist freie Software (GPL-3.0) und ein unabhängiges Projekt ohne Verbindung zu Brother oder Madeira.",
 } as const;
 
 export type TranslationKey = keyof typeof de;

@@ -11,6 +11,7 @@ import { Header } from "./ui/Header";
 import { ElementPanel } from "./ui/ElementPanel";
 import { Preview } from "./ui/Preview";
 import { InfoPanels } from "./ui/InfoPanels";
+import { InfoDialog } from "./ui/InfoDialog";
 import { DEFAULT_HOOP_MM } from "./ui/Preview";
 import { designKey, useMachineStore } from "./machine/useMachineStore";
 import { MachineStatus } from "./machine/types";
@@ -23,6 +24,7 @@ export function App() {
   const fabric = useDesignStore((s) => s.fabric);
   const { design, error: genError } = useGeneratedDesign(elements, fabric);
   const [error, setError] = useState<string | null>(null);
+  const [showInfo, setShowInfo] = useState(false);
 
   // Hoop size: reported by the machine once connected (0.1 mm units), else 100 × 100 mm.
   const info = useMachineStore((s) => s.info);
@@ -100,6 +102,7 @@ export function App() {
         onImportSvg={onImportSvg}
         onExportPes={onExportPes}
         canExport={design.stitches.length > 1}
+        onInfo={() => setShowInfo(true)}
       />
       {shownError && (
         <div role="alert" className="flex items-start gap-3 bg-thread-100 px-5 py-2 text-sm text-denim-950">
@@ -111,6 +114,7 @@ export function App() {
           )}
         </div>
       )}
+      {showInfo && <InfoDialog onClose={() => setShowInfo(false)} />}
       <main className="grid flex-1 gap-4 overflow-auto p-4 lg:grid-cols-[360px_1fr_280px] lg:overflow-hidden">
         <div className="lg:overflow-y-auto lg:pr-1">
           <ElementPanel onError={setError} />
@@ -118,7 +122,12 @@ export function App() {
         <Preview design={design} hoop={hoop} sewnFraction={sewnFraction} fitsHoop={fitsHoop} />
         <div className="flex flex-col gap-4 lg:overflow-y-auto">
           <InfoPanels design={design} fitsHoop={fitsHoop} />
-          <p className="px-1 text-xs text-denim-500">{t("footer.credits")}</p>
+          <p className="px-1 text-xs text-denim-500">
+            {t("footer.credits")}{" "}
+            <button type="button" onClick={() => setShowInfo(true)} className="font-medium text-denim-700 underline">
+              {t("info.open")}
+            </button>
+          </p>
         </div>
       </main>
     </div>

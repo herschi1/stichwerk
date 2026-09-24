@@ -8,9 +8,10 @@ interface Props {
   onImportSvg: () => void;
   onExportPes: () => void;
   canExport: boolean;
+  onInfo: () => void;
 }
 
-export function Header({ onNew, onOpen, onSave, onImportSvg, onExportPes, canExport }: Props) {
+export function Header({ onNew, onOpen, onSave, onImportSvg, onExportPes, canExport, onInfo }: Props) {
   const t = useT();
   const { lang, setLang } = useLang();
   return (
@@ -30,6 +31,9 @@ export function Header({ onNew, onOpen, onSave, onImportSvg, onExportPes, canExp
             {t("toolbar.exportPes")}
           </ToolButton>
         </nav>
+        <button type="button" onClick={onInfo} className="text-sm text-denim-200 underline-offset-2 hover:text-white hover:underline">
+          {t("info.open")}
+        </button>
         <div className="flex overflow-hidden rounded-md ring-1 ring-denim-700" role="group" aria-label={t("lang.switch")}>
           {(["de", "en"] as Lang[]).map((l) => (
             <button

@@ -1,7 +1,7 @@
 {
   "name": "stichwerk",
   "private": true,
-  "version": "0.3.2",
+  "version": "0.3.3",
   "type": "module",
   "description": "Stichwerk – Stickmuster gestalten und an die Brother PP1 senden",
   "scripts": {
@@ -28,5 +28,10 @@
     "typescript": "~5.9.3",
     "vite": "^7.2.4",
     "vitest": "^4.0.15"
+  },
+  "license": "GPL-3.0-or-later",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/herschi1/stichwerk"
   }
 }
