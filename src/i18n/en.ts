@@ -31,11 +31,17 @@ export const en: Record<TranslationKey, string> = {
   "shape.rect": "Rectangle",
   "shape.star": "Star",
 
-  "font.style.bold": "bold",
-  "font.style.rounded": "rounded",
-  "font.style.serif": "serif",
-  "font.style.script": "script",
 
+  "edit.fontFrom": "from {n} mm",
+  "edit.fontMinHeight": "This font sews cleanly from about {n} mm height. Make the text larger or choose “Outline only”.",
+  "font.cat.bold": "Bold",
+  "font.cat.rounded": "Rounded",
+  "font.cat.condensed": "Condensed",
+  "font.cat.serif": "Serif",
+  "font.cat.script": "Script",
+  "font.cat.hand": "Handwriting",
+  "font.cat.display": "Display & college",
+  "font.cat.custom": "Your fonts",
   "edit.text": "Text (Enter for a new line)",
   "edit.font": "Font",
   "edit.fontUpload": "Load your own font (TTF/OTF/WOFF) …",
@@ -52,8 +58,6 @@ export const en: Record<TranslationKey, string> = {
   "edit.density": "Row spacing (mm)",
   "edit.underlay": "Underlay",
   "edit.color": "Thread colour (Brother)",
-  "edit.smallText":
-    "Fills get lumpy on letters smaller than 7 mm. “Outline only” or a larger height will sew more cleanly.",
 
   "mode.fill": "Fill",
   "mode.fill-outline": "Fill with outline",
@@ -65,7 +69,6 @@ export const en: Record<TranslationKey, string> = {
   "edit.borderWidth": "Border width (mm)",
   "edit.satinHint":
     "Satin has a lovely sheen and suits lettering and narrow shapes up to 7 mm wide. Stichwerk fills wider parts automatically.",
-  "edit.smallSatin": "Below 4 mm height even satin gets messy. “Outline only” is the better choice here.",
 
   "fabricProfile.title": "Fabric",
   "fabricProfile.jersey": "T-shirt / jersey (stretchy)",
@@ -178,5 +181,5 @@ export const en: Record<TranslationKey, string> = {
   "error.generic": "Something went wrong: {msg}",
 
   "footer.credits":
-    "Fonts under the SIL Open Font License. PES export based on pyembroidery (MIT). Machine protocol based on Respira (Apache-2.0).",
+    "Fonts under free licences (OFL/Apache, see fonts/FONTS.md). PES export based on pyembroidery (MIT). Machine protocol based on Respira (Apache-2.0).",
 };

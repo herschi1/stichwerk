@@ -15,8 +15,8 @@ Stichwerk verwendet Teile folgender Projekte / uses parts of the following proje
   PES/PEC-Export (`src/io/pes.ts`, `src/io/pecData.ts`) ist eine Portierung nach TypeScript.
   The PES/PEC export is a TypeScript port.
 
-- **Schriften / Fonts** – Montserrat, Fredoka, Roboto Slab, Pacifico – SIL Open Font
-  License 1.1, siehe / see `public/fonts/LICENSE-OFL.txt`.
+- **Schriften / Fonts** – 30 Google-Fonts-Schriften unter SIL Open Font License 1.1 bzw.
+  Apache License 2.0, Übersicht / overview: `public/fonts/FONTS.md`.
 
 - **opentype.js** – MIT License.
 

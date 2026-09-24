@@ -29,11 +29,17 @@ export const de = {
   "shape.rect": "Rechteck",
   "shape.star": "Stern",
 
-  "font.style.bold": "kräftig",
-  "font.style.rounded": "rund",
-  "font.style.serif": "Serifen",
-  "font.style.script": "Schreibschrift",
 
+  "edit.fontFrom": "ab {n} mm",
+  "edit.fontMinHeight": "Diese Schrift stickt erst ab etwa {n} mm Höhe sauber. Mach den Text größer oder wähle „Nur Kontur“.",
+  "font.cat.bold": "Kräftig",
+  "font.cat.rounded": "Rund",
+  "font.cat.condensed": "Schmal",
+  "font.cat.serif": "Mit Serifen",
+  "font.cat.script": "Schreibschrift",
+  "font.cat.hand": "Handschrift",
+  "font.cat.display": "Deko & College",
+  "font.cat.custom": "Eigene Schriften",
   "edit.text": "Text (Enter für neue Zeile)",
   "edit.font": "Schrift",
   "edit.fontUpload": "Eigene Schrift laden (TTF/OTF/WOFF) …",
@@ -50,8 +56,6 @@ export const de = {
   "edit.density": "Reihenabstand (mm)",
   "edit.underlay": "Unterlage",
   "edit.color": "Garnfarbe (Brother)",
-  "edit.smallText":
-    "Bei Schrift unter 7 mm wird eine Füllung schnell klumpig. „Nur Kontur“ oder eine größere Höhe sticken sauberer.",
 
   "mode.fill": "Füllung",
   "mode.fill-outline": "Füllung mit Kontur",
@@ -63,7 +67,6 @@ export const de = {
   "edit.borderWidth": "Randbreite (mm)",
   "edit.satinHint":
     "Satin glänzt schön und eignet sich für Schrift und schmale Formen bis 7 mm Breite. Breitere Stellen füllt Stichwerk automatisch.",
-  "edit.smallSatin": "Unter 4 mm Höhe wird auch Satin unsauber. „Nur Kontur“ ist hier die bessere Wahl.",
 
   "fabricProfile.title": "Stoff",
   "fabricProfile.jersey": "T-Shirt / Jersey (dehnbar)",
@@ -176,7 +179,7 @@ export const de = {
   "error.generic": "Etwas ist schiefgelaufen: {msg}",
 
   "footer.credits":
-    "Schriften unter SIL Open Font License. PES-Export nach pyembroidery (MIT). Maschinenprotokoll nach Respira (Apache-2.0).",
+    "Schriften unter freien Lizenzen (OFL/Apache, siehe fonts/FONTS.md). PES-Export nach pyembroidery (MIT). Maschinenprotokoll nach Respira (Apache-2.0).",
 } as const;
 
 export type TranslationKey = keyof typeof de;

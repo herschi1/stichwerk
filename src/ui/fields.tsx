@@ -13,6 +13,16 @@ export function Field({ label, children }: { label: string; children: ReactNode 
   );
 }
 
+/** Like Field, but not a <label>: for composite controls such as pickers. */
+export function Group({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div role="group" aria-label={label} className="flex flex-col gap-1 text-xs font-medium text-denim-700">
+      <span>{label}</span>
+      {children}
+    </div>
+  );
+}
+
 export function NumField(props: {
   label: string;
   value: number;

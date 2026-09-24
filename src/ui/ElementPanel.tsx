@@ -2,16 +2,11 @@ import { useRef, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { useT, type TFunction, type TranslationKey } from "../i18n";
 import { useDesignStore } from "../designer/useDesignStore";
-import {
-  BUNDLED_FONTS,
-  DEFAULT_FONT_ID,
-  isFontAvailable,
-  registerCustomFont,
-  useCustomFonts,
-} from "../designer/fonts";
+import { DEFAULT_FONT_ID, fontInfo, isFontAvailable, registerCustomFont } from "../designer/fonts";
+import { FontPicker } from "./FontPicker";
 import { BROTHER_PALETTE } from "../designer/palette";
 import type { DesignElement, ShapeKind, StitchMode } from "../designer/types";
-import { Field, NumField, Panel, inputClass } from "./fields";
+import { Field, Group, NumField, Panel, inputClass } from "./fields";
 import { FABRIC_PROFILES, type FabricProfileId } from "../engine/profiles";
 
 const SHAPES: ShapeKind[] = ["heart", "circle", "rect", "star"];
@@ -64,7 +59,6 @@ export function ElementPanel({ onError }: { onError: (msg: string) => void }) {
         select: s.select,
       })),
     );
-  const customFonts = useCustomFonts((s) => s.customFonts);
   const fontInput = useRef<HTMLInputElement>(null);
   const selected = elements.find((e) => e.id === selectedId) ?? null;
 
@@ -78,10 +72,15 @@ export function ElementPanel({ onError }: { onError: (msg: string) => void }) {
     }
   };
 
+  // Each font has a minimum height below which satin/fill gets messy.
+  const minHeight =
+    selected?.kind === "text"
+      ? selected.mode === "satin"
+        ? fontInfo(selected.fontId).minHeight
+        : Math.max(7, fontInfo(selected.fontId).minHeight)
+      : 0;
   const smallText =
-    selected?.kind === "text" &&
-    ((selected.mode === "satin" && selected.height < 4) ||
-      (selected.mode !== "satin" && selected.mode !== "outline" && selected.height < 7));
+    selected?.kind === "text" && selected.mode !== "outline" && selected.height < minHeight;
   const isSatin = selected?.mode === "satin";
 
   const changeMode = (el: DesignElement, mode: StitchMode) => {
@@ -191,27 +190,13 @@ export function ElementPanel({ onError }: { onError: (msg: string) => void }) {
                     onChange={(e) => update(selected.id, { text: e.target.value })}
                   />
                 </Field>
-                <Field label={t("edit.font")}>
-                  <select
-                    className={inputClass}
+                <Group label={t("edit.font")}>
+                  <FontPicker
                     value={isFontAvailable(selected.fontId) ? selected.fontId : DEFAULT_FONT_ID}
-                    onChange={(e) => {
-                      if (e.target.value === "__upload") fontInput.current?.click();
-                      else update(selected.id, { fontId: e.target.value });
-                    }}
-                  >
-                    {BUNDLED_FONTS.map((f) => (
-                      <option key={f.id} value={f.id}>
-                        {f.name} ({t(f.styleKey!)})
-                      </option>
-                    ))}
-                    {customFonts.map((f) => (
-                      <option key={f.id} value={f.id}>
-                        {f.name}
-                      </option>
-                    ))}
-                    <option value="__upload">{t("edit.fontUpload")}</option>
-                  </select>
+                    sample={selected.text}
+                    onChange={(id) => update(selected.id, { fontId: id })}
+                    onUpload={() => fontInput.current?.click()}
+                  />
                   <input
                     ref={fontInput}
                     type="file"
@@ -222,7 +207,7 @@ export function ElementPanel({ onError }: { onError: (msg: string) => void }) {
                       e.target.value = "";
                     }}
                   />
-                </Field>
+                </Group>
                 <div className="grid grid-cols-3 gap-2">
                   <NumField
                     label={t("edit.letterHeight")}
@@ -379,7 +364,7 @@ export function ElementPanel({ onError }: { onError: (msg: string) => void }) {
 
             {smallText && (
               <p className="rounded-md bg-thread-100 px-2 py-1.5 text-xs text-denim-900">
-                {isSatin ? t("edit.smallSatin") : t("edit.smallText")}
+                {t("edit.fontMinHeight", { n: minHeight })}
               </p>
             )}
 
@@ -409,9 +394,9 @@ export function ElementPanel({ onError }: { onError: (msg: string) => void }) {
             )}
 
             {(selected.kind !== "svg" || selected.singleColor) && (
-              <Field label={t("edit.color")}>
+              <Group label={t("edit.color")}>
                 <Swatches value={selected.color} onPick={(hex) => update(selected.id, { color: hex })} />
-              </Field>
+              </Group>
             )}
           </div>
         </Panel>
@@ -431,7 +416,7 @@ function SvgColorEditor({
 }) {
   const [editing, setEditing] = useState<string | null>(null);
   return (
-    <Field label={label}>
+    <Group label={label}>
       <div className="flex flex-wrap gap-1.5">
         {colors.map((c) => (
           <button
@@ -458,7 +443,7 @@ function SvgColorEditor({
           />
         </div>
       )}
-    </Field>
+    </Group>
   );
 }
 
