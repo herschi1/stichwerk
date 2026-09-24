@@ -7,9 +7,9 @@
  * beiden Felder leer sind, wird der Abschnitt in der Info-Seite ausgeblendet.
  */
 export const SITE = {
-  /** Name der Medieninhaberin, z. B. "Kayla Beispiel" */
+  /** Name der Medieninhaberin, z. B. "Herschmann Christian" */
   ownerName: "",
-  /** Wohnort, z. B. "Musterstadt, Österreich" */
+  /** Wohnort, z. B. "Feldkirch, Österreich" */
   ownerLocation: "",
   /** Wo der Quellcode liegt (von der GPL verlangt) */
   repoUrl: "https://github.com/herschi1/stichwerk",
