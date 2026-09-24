@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { useT } from "./i18n";
 import { useDesignStore } from "./designer/useDesignStore";
 import { useGeneratedDesign } from "./designer/useGeneratedDesign";
@@ -10,6 +11,9 @@ import { Header } from "./ui/Header";
 import { ElementPanel } from "./ui/ElementPanel";
 import { Preview } from "./ui/Preview";
 import { InfoPanels } from "./ui/InfoPanels";
+import { DEFAULT_HOOP_MM } from "./ui/Preview";
+import { designKey, useMachineStore } from "./machine/useMachineStore";
+import { MachineStatus } from "./machine/types";
 
 export function App() {
   const t = useT();
@@ -18,6 +22,33 @@ export function App() {
   const addSvg = useDesignStore((s) => s.addSvg);
   const { design, error: genError } = useGeneratedDesign(elements);
   const [error, setError] = useState<string | null>(null);
+
+  // Hoop size: reported by the machine once connected (0.1 mm units), else 100 × 100 mm.
+  const info = useMachineStore((s) => s.info);
+  const hoopW = info?.maxWidth ? info.maxWidth / 10 : DEFAULT_HOOP_MM;
+  const hoopH = info?.maxHeight ? info.maxHeight / 10 : DEFAULT_HOOP_MM;
+  const hoop = useMemo(() => ({ w: hoopW, h: hoopH }), [hoopW, hoopH]);
+  const fitsHoop = design.stitches.every(
+    ([x, y]) => Math.abs(x) <= hoop.w * 5 && Math.abs(y) <= hoop.h * 5,
+  );
+
+  // Fade the not-yet-sewn part of the preview while the machine works on this design.
+  const machine = useMachineStore(
+    useShallow((s) => ({
+      uploaded: s.uploaded,
+      progress: s.progress,
+      adjusted: s.adjustedStitch,
+      status: s.status,
+    })),
+  );
+  const sewingThis =
+    !!machine.uploaded &&
+    machine.uploaded.key === designKey(design.stitches) &&
+    machine.status !== MachineStatus.SEWING_COMPLETE &&
+    (machine.adjusted ?? machine.progress?.currentStitch ?? 0) > 0;
+  const sewnFraction = sewingThis
+    ? (machine.adjusted ?? machine.progress?.currentStitch ?? 0) / (machine.uploaded!.totalStitches || 1)
+    : null;
 
   const shownError =
     error ??
@@ -82,9 +113,9 @@ export function App() {
         <div className="lg:overflow-y-auto lg:pr-1">
           <ElementPanel onError={setError} />
         </div>
-        <Preview design={design} />
+        <Preview design={design} hoop={hoop} sewnFraction={sewnFraction} fitsHoop={fitsHoop} />
         <div className="flex flex-col gap-4 lg:overflow-y-auto">
-          <InfoPanels design={design} />
+          <InfoPanels design={design} fitsHoop={fitsHoop} />
           <p className="px-1 text-xs text-denim-500">{t("footer.credits")}</p>
         </div>
       </main>

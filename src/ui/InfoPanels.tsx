@@ -2,11 +2,12 @@ import type { GeneratedDesign } from "../engine/compose";
 import { useLang, useT } from "../i18n";
 import { threadInfo } from "../designer/palette";
 import { Panel } from "./fields";
+import { MachinePanel } from "./MachinePanel";
 
 /** Rough sewing time: the PP1 sews around 400 stitches per minute incl. overhead. */
 const STITCHES_PER_MINUTE = 400;
 
-export function InfoPanels({ design }: { design: GeneratedDesign }) {
+export function InfoPanels({ design, fitsHoop }: { design: GeneratedDesign; fitsHoop: boolean }) {
   const t = useT();
   const lang = useLang((s) => s.lang);
   const count = design.stitches.length;
@@ -15,6 +16,7 @@ export function InfoPanels({ design }: { design: GeneratedDesign }) {
 
   return (
     <div className="flex flex-col gap-4">
+      <MachinePanel design={design} fitsHoop={fitsHoop} />
       {count > 0 && (
         <Panel>
           <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
@@ -51,9 +53,6 @@ export function InfoPanels({ design }: { design: GeneratedDesign }) {
         </Panel>
       )}
 
-      <Panel title={t("machine.title")}>
-        <p className="text-sm text-denim-700">{t("machine.soon")}</p>
-      </Panel>
     </div>
   );
 }

@@ -4,9 +4,8 @@ import type { GeneratedDesign } from "../engine/compose";
 import { useT, type TranslationKey } from "../i18n";
 import { usePreviewSettings, FABRICS } from "./usePreviewSettings";
 
-/** Brother PP1 embroidery area in mm. */
-export const HOOP_MM = 100;
-const VIEW_MM = HOOP_MM + 24;
+/** Brother PP1 embroidery area in mm (used until the machine reports its own). */
+export const DEFAULT_HOOP_MM = 100;
 
 function shade(hex: string, factor: number): string {
   const n = parseInt(hex.slice(1), 16);
@@ -25,20 +24,23 @@ function draw(
   showJumps: boolean,
   zoom: number,
   pan: { x: number; y: number },
+  hoop: { w: number; h: number },
+  sewnFraction: number | null,
 ) {
   const dpr = window.devicePixelRatio || 1;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, w, h);
-  const scale = (Math.min(w, h) / VIEW_MM) * zoom; // px per mm
+  const scale = Math.min(w / (hoop.w + 24), h / (hoop.h + 24)) * zoom; // px per mm
   ctx.translate(w / 2 + pan.x, h / 2 + pan.y);
   ctx.scale(scale, scale);
 
-  // Hoop: fabric inside, a wooden-ish double ring outside
-  const half = HOOP_MM / 2;
+  // Hoop: fabric inside, a double ring outside
+  const hw = hoop.w / 2;
+  const hh = hoop.h / 2;
   const r = 6;
   const round = (inset: number) => {
     ctx.beginPath();
-    ctx.roundRect(-half - inset, -half - inset, HOOP_MM + 2 * inset, HOOP_MM + 2 * inset, r + inset);
+    ctx.roundRect(-hw - inset, -hh - inset, hoop.w + 2 * inset, hoop.h + 2 * inset, r + inset);
   };
   round(5);
   ctx.fillStyle = "#cdd5e3";
@@ -57,18 +59,24 @@ function draw(
   const light = parseInt(fabric.slice(1), 16) > 0x888888;
   ctx.strokeStyle = light ? "rgba(23,32,51,0.08)" : "rgba(255,255,255,0.10)";
   ctx.lineWidth = 1 / scale;
-  for (let v = -half; v <= half; v += 10) {
-    ctx.beginPath();
-    ctx.moveTo(v, -half);
-    ctx.lineTo(v, half);
-    ctx.moveTo(-half, v);
-    ctx.lineTo(half, v);
-    ctx.stroke();
-  }
+  ctx.beginPath();
+  for (let v = 0; v <= hw; v += 10)
+    for (const x of v === 0 ? [0] : [v, -v]) {
+      ctx.moveTo(x, -hh);
+      ctx.lineTo(x, hh);
+    }
+  for (let v = 0; v <= hh; v += 10)
+    for (const y of v === 0 ? [0] : [v, -v]) {
+      ctx.moveTo(-hw, y);
+      ctx.lineTo(hw, y);
+    }
+  ctx.stroke();
   ctx.restore();
 
   // Stitches: a darker underside first, then the thread colour – reads as thread.
   const st = design.stitches;
+  // While sewing, stitches that are still to come are drawn faded.
+  const sewnUntil = sewnFraction === null ? st.length : Math.round(sewnFraction * st.length);
   const threadW = Math.max(0.3, 1.2 / scale);
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
@@ -79,16 +87,20 @@ function draw(
       const color = design.blockColors[block] ?? "#000000";
       ctx.beginPath();
       let started = false;
-      for (; i < st.length && st[i][3] === block; i++) {
+      const faded = i >= sewnUntil;
+      ctx.globalAlpha = faded ? 0.28 : 1;
+      for (; i < st.length && st[i][3] === block && (i >= sewnUntil) === faded; i++) {
         const [x, y, cmd] = st[i];
         if (!started || cmd & MOVE) {
           ctx.moveTo(x / 10, y / 10);
           started = true;
         } else ctx.lineTo(x / 10, y / 10);
       }
+      ctx.globalAlpha = faded ? 0.28 : 1;
       ctx.strokeStyle = pass === 0 ? shade(color, 0.55) : color;
       ctx.lineWidth = pass === 0 ? threadW * 1.45 : threadW;
       ctx.stroke();
+      ctx.globalAlpha = 1;
     }
   }
 
@@ -108,7 +120,17 @@ function draw(
   }
 }
 
-export function Preview({ design }: { design: GeneratedDesign }) {
+export function Preview({
+  design,
+  hoop,
+  sewnFraction,
+  fitsHoop,
+}: {
+  design: GeneratedDesign;
+  hoop: { w: number; h: number };
+  sewnFraction: number | null;
+  fitsHoop: boolean;
+}) {
   const t = useT();
   const { fabric, setFabric, showJumps, setShowJumps } = usePreviewSettings();
   const wrap = useRef<HTMLDivElement>(null);
@@ -135,10 +157,8 @@ export function Preview({ design }: { design: GeneratedDesign }) {
     c.width = Math.round(size.w * dpr);
     c.height = Math.round(size.h * dpr);
     const ctx = c.getContext("2d");
-    if (ctx) draw(ctx, size.w, size.h, design, fabric, showJumps, zoom, pan);
-  }, [design, fabric, showJumps, zoom, pan, size]);
-
-  const outside = design.stitches.some(([x, y]) => Math.abs(x) > HOOP_MM * 5 || Math.abs(y) > HOOP_MM * 5);
+    if (ctx) draw(ctx, size.w, size.h, design, fabric, showJumps, zoom, pan, hoop, sewnFraction);
+  }, [design, fabric, showJumps, zoom, pan, size, hoop, sewnFraction]);
 
   return (
     <div className="flex h-full min-h-[420px] flex-col gap-3">
@@ -213,8 +233,8 @@ export function Preview({ design }: { design: GeneratedDesign }) {
           </p>
         )}
       </div>
-      {outside && (
-        <p className="rounded-md bg-thread-100 px-3 py-2 text-sm text-denim-900">{t("preview.outside")}</p>
+      {!fitsHoop && design.stitches.length > 0 && (
+        <p className="rounded-md bg-thread-100 px-3 py-2 text-sm text-denim-900">{t("preview.outside", { w: Math.round(hoop.w), h: Math.round(hoop.h) })}</p>
       )}
     </div>
   );

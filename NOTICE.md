@@ -3,9 +3,12 @@
 Stichwerk verwendet Teile folgender Projekte / uses parts of the following projects:
 
 - **Respira** – https://github.com/jhbruhn/respira – © jhbruhn, Apache License 2.0.
-  Brother-Garnfarbtabelle (`src/data/BrotherColor.json`); das Maschinenprotokoll für die
-  Brother PP1 folgt in einer späteren Version. / Brother thread colour table; the PP1
-  machine protocol will follow in a later version.
+  Übernommen / taken over: Bluetooth-Protokoll der Brother PP1
+  (`src/machine/BrotherPP1Service.ts`), PEN-Encoder/-Decoder (`src/machine/pen/`),
+  Maschinen-Typen (`src/machine/types.ts`), Brother-Garnfarbtabelle
+  (`src/data/BrotherColor.json`). Fehlercodes, Zustandsregeln und die Logik zum
+  Zurückgehen nach Fadenfehlern folgen Respira, Texte wurden neu geschrieben.
+  / Error codes, state rules and thread-error rollback follow Respira; texts rewritten.
   Lizenztext / licence text: https://www.apache.org/licenses/LICENSE-2.0
 
 - **pyembroidery / pystitch** – © Tatarize, MIT License.
