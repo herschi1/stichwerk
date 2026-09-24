@@ -59,6 +59,24 @@ export const en: Record<TranslationKey, string> = {
   "mode.fill-outline": "Fill with outline",
   "mode.outline": "Outline only (bean stitch)",
 
+  "mode.fill-satin": "Fill with satin border",
+  "mode.satin": "Satin (lettering, narrow shapes)",
+  "edit.satinSpacing": "Satin spacing (mm)",
+  "edit.borderWidth": "Border width (mm)",
+  "edit.satinHint":
+    "Satin has a lovely sheen and suits lettering and narrow shapes up to 7 mm wide. Stichwerk fills wider parts automatically.",
+  "edit.smallSatin": "Below 4 mm height even satin gets messy. “Outline only” is the better choice here.",
+
+  "fabricProfile.title": "Fabric",
+  "fabricProfile.jersey": "T-shirt / jersey (stretchy)",
+  "fabricProfile.woven": "Cotton / woven fabric",
+  "fabricProfile.canvas": "Denim / canvas (firm)",
+  "fabricProfile.hint.jersey":
+    "Use cut-away stabilizer and do not stretch the fabric when hooping. Stichwerk adds more pull compensation and underlay.",
+  "fabricProfile.hint.woven": "Tear-away stabilizer is usually enough.",
+  "fabricProfile.hint.canvas":
+    "Firm fabric hardly pulls in, tear-away stabilizer is enough. Stichwerk uses less pull compensation.",
+
   "svg.colors": "Colours",
   "svg.fileColors": "Colours from the file",
   "svg.singleColor": "One colour for everything",

@@ -12,9 +12,11 @@ import {
 import { BROTHER_PALETTE } from "../designer/palette";
 import type { DesignElement, ShapeKind, StitchMode } from "../designer/types";
 import { Field, NumField, Panel, inputClass } from "./fields";
+import { FABRIC_PROFILES, type FabricProfileId } from "../engine/profiles";
 
 const SHAPES: ShapeKind[] = ["heart", "circle", "rect", "star"];
-const MODES: StitchMode[] = ["fill", "fill-outline", "outline"];
+const MODES: StitchMode[] = ["satin", "fill", "fill-satin", "fill-outline", "outline"];
+const FABRIC_IDS: FabricProfileId[] = ["jersey", "woven", "canvas"];
 
 function elementLabel(el: DesignElement, t: TFunction): string {
   if (el.kind === "text")
@@ -47,9 +49,11 @@ function Swatches({ value, onPick }: { value: string; onPick: (hex: string) => v
 
 export function ElementPanel({ onError }: { onError: (msg: string) => void }) {
   const t = useT();
-  const { elements, selectedId, addText, addShape, update, remove, moveInOrder, select } =
+  const { elements, selectedId, addText, addShape, update, remove, moveInOrder, select, fabric, setFabric } =
     useDesignStore(
       useShallow((s) => ({
+        fabric: s.fabric,
+        setFabric: s.setFabric,
         elements: s.elements,
         selectedId: s.selectedId,
         addText: s.addText,
@@ -75,10 +79,37 @@ export function ElementPanel({ onError }: { onError: (msg: string) => void }) {
   };
 
   const smallText =
-    selected?.kind === "text" && selected.mode !== "outline" && selected.height < 7;
+    selected?.kind === "text" &&
+    ((selected.mode === "satin" && selected.height < 4) ||
+      (selected.mode !== "satin" && selected.mode !== "outline" && selected.height < 7));
+  const isSatin = selected?.mode === "satin";
+
+  const changeMode = (el: DesignElement, mode: StitchMode) => {
+    // satin wants denser rows than a fill
+    let density = el.density;
+    if (mode === "satin" && el.mode !== "satin") density = FABRIC_PROFILES[fabric].satinSpacing;
+    if (mode !== "satin" && el.mode === "satin") density = 0.4;
+    update(el.id, { mode, density });
+  };
 
   return (
     <div className="flex flex-col gap-4">
+      <Panel title={t("fabricProfile.title")}>
+        <select
+          className={inputClass}
+          value={fabric}
+          onChange={(e) => setFabric(e.target.value as FabricProfileId)}
+          aria-label={t("fabricProfile.title")}
+        >
+          {FABRIC_IDS.map((f) => (
+            <option key={f} value={f}>
+              {t(`fabricProfile.${f}` as TranslationKey)}
+            </option>
+          ))}
+        </select>
+        <p className="mt-2 text-xs text-denim-700">{t(`fabricProfile.hint.${fabric}` as TranslationKey)}</p>
+      </Panel>
+
       <Panel title={t("elements.title")}>
         <div className="mb-3 flex gap-2">
           <button
@@ -294,7 +325,7 @@ export function ElementPanel({ onError }: { onError: (msg: string) => void }) {
               <select
                 className={inputClass}
                 value={selected.mode}
-                onChange={(e) => update(selected.id, { mode: e.target.value as StitchMode })}
+                onChange={(e) => changeMode(selected, e.target.value as StitchMode)}
               >
                 {MODES.map((m) => (
                   <option key={m} value={m}>
@@ -304,22 +335,36 @@ export function ElementPanel({ onError }: { onError: (msg: string) => void }) {
               </select>
             </Field>
 
+            {isSatin && <p className="text-xs text-denim-700">{t("edit.satinHint")}</p>}
+
             {selected.mode !== "outline" && (
               <div className="grid grid-cols-3 items-end gap-2">
+                {!isSatin && (
+                  <NumField
+                    label={t("edit.angle")}
+                    value={selected.angle}
+                    step={15}
+                    onChange={(v) => update(selected.id, { angle: v })}
+                  />
+                )}
                 <NumField
-                  label={t("edit.angle")}
-                  value={selected.angle}
-                  step={15}
-                  onChange={(v) => update(selected.id, { angle: v })}
-                />
-                <NumField
-                  label={t("edit.density")}
+                  label={isSatin ? t("edit.satinSpacing") : t("edit.density")}
                   value={selected.density}
                   step={0.05}
-                  min={0.3}
+                  min={isSatin ? 0.2 : 0.3}
                   max={1}
-                  onChange={(v) => update(selected.id, { density: Math.max(0.3, v) })}
+                  onChange={(v) => update(selected.id, { density: Math.max(isSatin ? 0.2 : 0.3, v) })}
                 />
+                {selected.mode === "fill-satin" && (
+                  <NumField
+                    label={t("edit.borderWidth")}
+                    value={selected.borderWidth ?? 2}
+                    step={0.5}
+                    min={1}
+                    max={6}
+                    onChange={(v) => update(selected.id, { borderWidth: Math.min(6, Math.max(1, v)) })}
+                  />
+                )}
                 <label className="flex items-center gap-2 pb-2 text-xs font-medium text-denim-700">
                   <input
                     type="checkbox"
@@ -333,7 +378,9 @@ export function ElementPanel({ onError }: { onError: (msg: string) => void }) {
             )}
 
             {smallText && (
-              <p className="rounded-md bg-thread-100 px-2 py-1.5 text-xs text-denim-900">{t("edit.smallText")}</p>
+              <p className="rounded-md bg-thread-100 px-2 py-1.5 text-xs text-denim-900">
+                {isSatin ? t("edit.smallSatin") : t("edit.smallText")}
+              </p>
             )}
 
             {selected.kind === "svg" && (

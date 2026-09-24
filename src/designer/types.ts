@@ -5,7 +5,7 @@
 
 import type { Pt } from "../engine/geometry";
 
-export type StitchMode = "fill" | "fill-outline" | "outline";
+export type StitchMode = "fill" | "fill-outline" | "fill-satin" | "satin" | "outline";
 export type ShapeKind = "circle" | "rect" | "heart" | "star";
 
 export interface BaseElement {
@@ -22,6 +22,8 @@ export interface BaseElement {
   density: number;
   /** Sew a light underlay below fills for better coverage. */
   underlay: boolean;
+  /** Width of the satin border in mode "fill-satin" (mm). */
+  borderWidth?: number;
 }
 
 export interface TextElement extends BaseElement {

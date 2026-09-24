@@ -12,9 +12,12 @@ import {
   dist,
   emptyBBox,
   extendBBox,
+  segmentInside,
   translateRegion,
 } from "./geometry";
 import { tatamiFill } from "./fill";
+import { satinBorder, satinFill } from "./satin";
+import { DEFAULT_FABRIC, FABRIC_PROFILES, type FabricProfile, type FabricProfileId } from "./profiles";
 import { beanStitch, runAroundRing } from "./running";
 import { shapeRegion } from "./shapes";
 import { layoutText } from "./text";
@@ -26,12 +29,16 @@ const MAX_STITCH_MM = 4.0;
 /** Stitches shorter than this are dropped (they can break the thread). */
 const MIN_STITCH_MM = 0.25;
 const FILL_STITCH_MM = 3.0;
-const PULL_COMPENSATION_MM = 0.2;
+/** Travel stitches inside an area up to this length instead of jumping. */
+const MAX_TRAVEL_MM = 12;
+const TRAVEL_STITCH_MM = 2.5;
 
 class StitchBuilder {
   stitches: number[][] = [];
   private pos: Pt | null = null;
   private color = 0;
+  /** Number of jumps replaced by travel stitches (for tests/statistics). */
+  travels = 0;
 
   get position(): Pt | null {
     return this.pos;
@@ -72,11 +79,29 @@ class StitchBuilder {
     }
   }
 
-  stroke(pts: Pt[]) {
+  /**
+   * Sew a stroke. If `area` is given and the way from the current needle
+   * position to the stroke start stays inside it, the gap is bridged with
+   * short running stitches (hidden under the following stitches) instead of
+   * a jump that would have to be cut.
+   */
+  stroke(pts: Pt[], area?: { region: Region; rule: "nonzero" | "evenodd" }) {
     if (pts.length === 0) return;
+    const gap = this.pos ? dist(this.pos, pts[0]) : 0;
     if (!this.pos) {
       this.emit(pts[0], STITCH);
-    } else if (dist(this.pos, pts[0]) > DIRECT_CONNECT_MM) {
+    } else if (
+      area &&
+      gap > DIRECT_CONNECT_MM &&
+      gap <= MAX_TRAVEL_MM &&
+      segmentInside(this.pos, pts[0], area.region, area.rule)
+    ) {
+      const from = this.pos;
+      const n = Math.ceil(gap / TRAVEL_STITCH_MM);
+      for (let k = 1; k <= n; k++)
+        this.stitchTo([from[0] + ((pts[0][0] - from[0]) * k) / n, from[1] + ((pts[0][1] - from[1]) * k) / n]);
+      this.travels++;
+    } else if (gap > DIRECT_CONNECT_MM) {
       // Respira's encoder adds lock stitches + thread cut for jumps > 5 mm
       this.emit(pts[0], MOVE);
     } else {
@@ -144,16 +169,21 @@ function sewRegion(
   region: Region,
   el: DesignElement,
   fillRule: "nonzero" | "evenodd",
+  fabric: FabricProfile,
 ) {
+  const area = { region, rule: fillRule };
   const runLen = outlineStitchLength(el);
-  const wantsFill = el.mode === "fill" || el.mode === "fill-outline";
-  if (wantsFill) {
+  const fillModes = ["fill", "fill-outline", "fill-satin"];
+
+  if (fillModes.includes(el.mode)) {
     if (el.underlay) {
+      if (fabric.edgeWalk)
+        for (const ring of region) b.stroke(runAroundRing(ring, 2.5, b.position), area);
       for (const s of tatamiFill(
         region,
         {
           angleDeg: el.angle + 90,
-          spacing: 1.8,
+          spacing: fabric.underlaySpacing,
           stitchLength: 3.0,
           endAdjust: -0.5,
           rowInset: 0.5,
@@ -162,7 +192,7 @@ function sewRegion(
         },
         b.position,
       ))
-        b.stroke(s);
+        b.stroke(s, area);
     }
     for (const s of tatamiFill(
       region,
@@ -170,27 +200,53 @@ function sewRegion(
         angleDeg: el.angle,
         spacing: el.density,
         stitchLength: FILL_STITCH_MM,
-        endAdjust: PULL_COMPENSATION_MM,
+        endAdjust: fabric.pullComp,
         rowInset: 0,
         stagger: true,
         fillRule,
       },
       b.position,
     ))
-      b.stroke(s);
+      b.stroke(s, area);
+  }
+
+  if (el.mode === "satin") {
+    for (const s of satinFill(
+      region,
+      {
+        spacing: el.density,
+        maxWidth: 7,
+        pullComp: fabric.pullComp,
+        underlay: el.underlay,
+        fillRule,
+        fallbackSpacing: 0.4,
+      },
+      b.position,
+    ))
+      b.stroke(s, area);
+  }
+
+  if (el.mode === "fill-satin") {
+    for (const s of satinBorder(
+      region,
+      el.borderWidth ?? 2,
+      { spacing: fabric.satinSpacing, pullComp: fabric.pullComp, fillRule },
+      b.position,
+    ))
+      b.stroke(s, area);
   }
   if (el.mode === "fill-outline") {
-    for (const ring of region)
-      b.stroke(runAroundRing(ring, runLen, b.position));
+    for (const ring of region) b.stroke(runAroundRing(ring, runLen, b.position), area);
   }
   if (el.mode === "outline") {
-    for (const ring of region)
-      b.stroke(beanStitch(runAroundRing(ring, runLen, b.position)));
+    for (const ring of region) b.stroke(beanStitch(runAroundRing(ring, runLen, b.position)));
   }
 }
 
 export interface GeneratedDesign {
   stitches: number[][];
+  /** Jumps that were replaced by hidden travel stitches. */
+  travels: number;
   /** One colour per colour block, in sewing order. */
   blockColors: string[];
   /** Size of the stitched area in mm. */
@@ -201,7 +257,9 @@ export interface GeneratedDesign {
 export function generateStitches(
   elements: DesignElement[],
   fonts: Map<string, opentype.Font>,
+  fabricId: FabricProfileId = DEFAULT_FABRIC,
 ): GeneratedDesign {
+  const fabric = FABRIC_PROFILES[fabricId] ?? FABRIC_PROFILES[DEFAULT_FABRIC];
   const b = new StitchBuilder();
   const blockColors: string[] = [];
   for (const el of elements) {
@@ -230,7 +288,7 @@ export function generateStitches(
         blockColors.push(part.color);
         b.setColorBlock(blockColors.length - 1);
       }
-      sewRegion(b, part.region, el, part.fillRule);
+      sewRegion(b, part.region, el, part.fillRule, fabric);
     }
   }
   const box = emptyBBox();
@@ -239,6 +297,7 @@ export function generateStitches(
   const empty = !isFinite(box.minX);
   return {
     stitches: b.stitches,
+    travels: b.travels,
     blockColors,
     width: empty ? 0 : box.maxX - box.minX,
     height: empty ? 0 : box.maxY - box.minY,

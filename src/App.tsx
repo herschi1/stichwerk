@@ -20,7 +20,8 @@ export function App() {
   const elements = useDesignStore((s) => s.elements);
   const replaceAll = useDesignStore((s) => s.replaceAll);
   const addSvg = useDesignStore((s) => s.addSvg);
-  const { design, error: genError } = useGeneratedDesign(elements);
+  const fabric = useDesignStore((s) => s.fabric);
+  const { design, error: genError } = useGeneratedDesign(elements, fabric);
   const [error, setError] = useState<string | null>(null);
 
   // Hoop size: reported by the machine once connected (0.1 mm units), else 100 × 100 mm.
@@ -66,14 +67,15 @@ export function App() {
     const file = await pickFile(".json,application/json");
     if (!file) return;
     try {
-      replaceAll(parseDesign(await file.text()));
+      const loaded = parseDesign(await file.text());
+      replaceAll(loaded.elements, loaded.fabric);
       setError(null);
     } catch {
       setError(t("error.projectInvalid"));
     }
   };
 
-  const onSave = () => downloadFile(serializeDesign(elements), "stichwerk-design.json", "application/json");
+  const onSave = () => downloadFile(serializeDesign(elements, fabric), "stichwerk-design.json", "application/json");
 
   const onImportSvg = async () => {
     const file = await pickFile(".svg,image/svg+xml");

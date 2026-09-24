@@ -28,7 +28,7 @@ export interface FillOptions {
   fillRule?: "nonzero" | "evenodd";
 }
 
-interface Seg {
+export interface Seg {
   x0: number;
   x1: number;
   y: number;
@@ -38,7 +38,10 @@ interface Seg {
 /** A stroke is a list of points stitched one after another without a jump. */
 export type Stroke = Pt[];
 
-function scanRows(region: Region, opts: FillOptions): Seg[][] {
+export function scanRows(
+  region: Region,
+  opts: Pick<FillOptions, "spacing" | "rowInset" | "endAdjust" | "fillRule">,
+): Seg[][] {
   let minY = Infinity;
   let maxY = -Infinity;
   for (const ring of region)
@@ -90,7 +93,7 @@ function scanRows(region: Region, opts: FillOptions): Seg[][] {
 }
 
 /** Chain row segments into blocks that can be stitched back and forth. */
-function buildBlocks(rows: Seg[][]): Seg[][] {
+export function buildBlocks(rows: Seg[][]): Seg[][] {
   const done: Seg[][] = [];
   let open: Seg[][] = [];
   for (const segs of rows) {

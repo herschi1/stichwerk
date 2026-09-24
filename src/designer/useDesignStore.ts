@@ -4,9 +4,12 @@ import { DEFAULT_FONT_ID } from "./fonts";
 import type { DesignElement, ShapeElement, SvgElement, TextElement } from "./types";
 import type { ImportedSvg } from "../io/svg";
 import { nearestBrotherColor } from "./palette";
+import { DEFAULT_FABRIC, type FabricProfileId } from "../engine/profiles";
 
 interface DesignState {
   elements: DesignElement[];
+  fabric: FabricProfileId;
+  setFabric: (fabric: FabricProfileId) => void;
   selectedId: string | null;
   addText: () => void;
   addShape: () => void;
@@ -15,7 +18,7 @@ interface DesignState {
   remove: (id: string) => void;
   moveInOrder: (id: string, dir: -1 | 1) => void;
   select: (id: string | null) => void;
-  replaceAll: (elements: DesignElement[]) => void;
+  replaceAll: (elements: DesignElement[], fabric?: FabricProfileId) => void;
 }
 
 const newId = () => Math.random().toString(36).slice(2, 10);
@@ -37,6 +40,8 @@ export const useDesignStore = create<DesignState>()(
     (set) => ({
       elements: [],
       selectedId: null,
+      fabric: DEFAULT_FABRIC,
+      setFabric: (fabric) => set({ fabric }),
 
       addText: () =>
         set((s) => {
@@ -50,6 +55,8 @@ export const useDesignStore = create<DesignState>()(
             letterSpacing: 0.3,
             lineSpacing: 1.5,
             angle: 0,
+            mode: "satin",
+            density: 0.3,
           };
           return { elements: [...s.elements, el], selectedId: el.id };
         }),
@@ -110,7 +117,8 @@ export const useDesignStore = create<DesignState>()(
         }),
 
       select: (id) => set({ selectedId: id }),
-      replaceAll: (elements) => set({ elements, selectedId: elements[0]?.id ?? null }),
+      replaceAll: (elements, fabric) =>
+        set((s) => ({ elements, fabric: fabric ?? s.fabric, selectedId: elements[0]?.id ?? null })),
     }),
     { name: "stichwerk-design" },
   ),

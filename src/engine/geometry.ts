@@ -67,3 +67,39 @@ export function cleanRing(ring: Ring, eps = 1e-6): Ring {
   if (out.length > 1 && dist(out[0], out[out.length - 1]) <= eps) out.pop();
   return out;
 }
+
+/** Is point p inside the region (nonzero or even-odd rule)? */
+export function insideRegion(
+  p: Pt,
+  region: Region,
+  rule: "nonzero" | "evenodd" = "nonzero",
+): boolean {
+  let winding = 0;
+  for (const ring of region) {
+    for (let i = 0; i < ring.length; i++) {
+      const a = ring[i];
+      const b = ring[(i + 1) % ring.length];
+      if (a[1] <= p[1]) {
+        if (b[1] > p[1] && (b[0] - a[0]) * (p[1] - a[1]) - (p[0] - a[0]) * (b[1] - a[1]) > 0)
+          winding++;
+      } else if (b[1] <= p[1] && (b[0] - a[0]) * (p[1] - a[1]) - (p[0] - a[0]) * (b[1] - a[1]) < 0)
+        winding--;
+    }
+  }
+  return rule === "evenodd" ? winding % 2 !== 0 : winding !== 0;
+}
+
+/** Does the straight line a→b stay inside the region (checked every 0.4 mm)? */
+export function segmentInside(
+  a: Pt,
+  b: Pt,
+  region: Region,
+  rule: "nonzero" | "evenodd" = "nonzero",
+): boolean {
+  const n = Math.max(1, Math.ceil(dist(a, b) / 0.4));
+  for (let k = 1; k < n; k++) {
+    const t = k / n;
+    if (!insideRegion([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t], region, rule)) return false;
+  }
+  return true;
+}

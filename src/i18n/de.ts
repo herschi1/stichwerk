@@ -57,6 +57,24 @@ export const de = {
   "mode.fill-outline": "Füllung mit Kontur",
   "mode.outline": "Nur Kontur (Bohnenstich)",
 
+  "mode.fill-satin": "Füllung mit Satinrand",
+  "mode.satin": "Satin (Schrift, schmale Formen)",
+  "edit.satinSpacing": "Satin-Abstand (mm)",
+  "edit.borderWidth": "Randbreite (mm)",
+  "edit.satinHint":
+    "Satin glänzt schön und eignet sich für Schrift und schmale Formen bis 7 mm Breite. Breitere Stellen füllt Stichwerk automatisch.",
+  "edit.smallSatin": "Unter 4 mm Höhe wird auch Satin unsauber. „Nur Kontur“ ist hier die bessere Wahl.",
+
+  "fabricProfile.title": "Stoff",
+  "fabricProfile.jersey": "T-Shirt / Jersey (dehnbar)",
+  "fabricProfile.woven": "Baumwolle / Webstoff",
+  "fabricProfile.canvas": "Jeans / Canvas (fest)",
+  "fabricProfile.hint.jersey":
+    "Schneidvlies (Cut-away) verwenden und den Stoff beim Einspannen nicht dehnen. Stichwerk gibt mehr Zugausgleich und mehr Unterlage.",
+  "fabricProfile.hint.woven": "Reißvlies (Tear-away) reicht meist.",
+  "fabricProfile.hint.canvas":
+    "Fester Stoff zieht sich kaum zusammen, Reißvlies genügt. Stichwerk arbeitet mit weniger Zugausgleich.",
+
   "svg.colors": "Farben",
   "svg.fileColors": "Farben aus der Datei",
   "svg.singleColor": "Eine Farbe für alles",
