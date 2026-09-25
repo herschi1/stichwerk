@@ -1,7 +1,7 @@
 {
   "name": "stichwerk",
   "private": true,
-  "version": "0.5.0",
+  "version": "0.6.0",
   "type": "module",
   "description": "Stichwerk – Stickmuster gestalten und an die Brother PP1 senden",
   "scripts": {
@@ -11,6 +11,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "clipper-lib": "^6.4.2",
     "opentype.js": "^1.3.4",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
@@ -18,6 +19,7 @@
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.1.17",
+    "@types/clipper-lib": "^6.4.0",
     "@types/node": "^24.10.1",
     "@types/opentype.js": "^1.3.8",
     "@types/react": "^19.2.5",
