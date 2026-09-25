@@ -1,5 +1,5 @@
 import { useEffect, useRef, type ReactNode } from "react";
-import { useT } from "../i18n";
+import { useLang, useT } from "../i18n";
 import { SITE } from "../site.config";
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
@@ -25,6 +25,11 @@ export function InfoDialog({ onClose }: { onClose: () => void }) {
   }, []);
 
   const hasOwner = SITE.ownerName.trim() && SITE.ownerLocation.trim();
+  const lang = useLang((st) => st.lang);
+  const built = new Date(__BUILD_TIME__).toLocaleString(lang === "de" ? "de-AT" : "en-GB", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
 
   return (
     <dialog
@@ -43,9 +48,13 @@ export function InfoDialog({ onClose }: { onClose: () => void }) {
         </button>
       </div>
       <div className="px-5 py-4">
+        <p className="mb-4 text-xs tabular-nums text-denim-700">
+          {t("info.version", { v: __APP_VERSION__ })} · {t("info.built", { date: built })}
+        </p>
         <Section title={t("info.about.title")}>
           <p>{t("info.about.text")}</p>
           <p>{t("info.about.risk")}</p>
+          <p>{t("info.about.ai")}</p>
           <p className="text-xs text-denim-700">{t("info.about.trademarks")}</p>
         </Section>
 

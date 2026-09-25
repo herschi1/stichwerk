@@ -194,12 +194,18 @@ export const en: Record<TranslationKey, string> = {
     "Info & licences",
   "info.close":
     "Close",
+  "info.version":
+    "Version {v}",
+  "info.built":
+    "built on {date}",
+  "info.about.ai":
+    "The source code of Stichwerk was created with the help of AI and checked with automated tests, but not reviewed line by line by hand. Errors cannot be ruled out.",
   "info.about.title":
     "About Stichwerk",
   "info.about.text":
     "Stichwerk is an independent, non-commercial hobby project for designing embroidery patterns for the Brother PP1 (SKiTCH). It is not affiliated with Brother Industries, Ltd. or Madeira Garnfabrik.",
   "info.about.risk":
-    "Use at your own risk and without warranty. Thread colours on screen approximate the real thread; the number on the spool is what counts.",
+    "Use entirely at your own risk and without any warranty. No liability is accepted for damage to the machine, fabric or materials, faulty embroidery results or data loss. Thread colours on screen approximate the real thread; the number on the spool is what counts.",
   "info.about.trademarks":
     "Brother, SKiTCH and Artspira are trademarks of Brother Industries, Ltd.; Madeira, Polyneon and Frosted Matt are trademarks of Madeira Garnfabrik. The names are used for descriptive purposes only.",
   "info.privacy.title":

@@ -19,6 +19,9 @@ export function Header({ onNew, onOpen, onSave, onImportSvg, onExportPes, canExp
       <div className="flex flex-wrap items-center gap-x-6 gap-y-2 px-5 py-3">
         <div className="flex items-baseline gap-3">
           <span className="font-display text-2xl tracking-tight">Stichwerk</span>
+          <span className="text-xs tabular-nums text-denim-200" title={t("info.version", { v: __APP_VERSION__ })}>
+            v{__APP_VERSION__}
+          </span>
           <span className="hidden text-sm text-denim-200 md:inline">{t("app.tagline")}</span>
         </div>
         <nav className="flex flex-1 flex-wrap items-center gap-1">

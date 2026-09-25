@@ -192,12 +192,18 @@ export const de = {
     "Info & Lizenzen",
   "info.close":
     "Schließen",
+  "info.version":
+    "Version {v}",
+  "info.built":
+    "gebaut am {date}",
+  "info.about.ai":
+    "Der Quellcode von Stichwerk wurde mit Hilfe von KI erstellt, mit automatischen Tests geprüft, aber nicht Zeile für Zeile von Hand kontrolliert. Fehler sind deshalb nicht ausgeschlossen.",
   "info.about.title":
     "Über Stichwerk",
   "info.about.text":
     "Stichwerk ist ein unabhängiges, nicht kommerzielles Hobbyprojekt zum Gestalten von Stickmustern für die Brother PP1 (SKiTCH). Es steht in keiner Verbindung zu Brother Industries, Ltd. oder zur Madeira Garnfabrik.",
   "info.about.risk":
-    "Die Nutzung erfolgt auf eigenes Risiko und ohne Gewähr. Die Garnfarben am Bildschirm sind Annäherungen an das echte Garn; maßgeblich ist die Nummer auf der Spule.",
+    "Die Nutzung erfolgt auf eigenes Risiko und ohne jede Gewähr. Für Schäden an Maschine, Stoff oder Material, fehlerhafte Stickergebnisse oder Datenverlust wird keine Haftung übernommen. Die Garnfarben am Bildschirm sind Annäherungen an das echte Garn; maßgeblich ist die Nummer auf der Spule.",
   "info.about.trademarks":
     "Brother, SKiTCH und Artspira sind Marken der Brother Industries, Ltd.; Madeira, Polyneon und Frosted Matt sind Marken der Madeira Garnfabrik. Die Namen werden nur beschreibend verwendet.",
   "info.privacy.title":
