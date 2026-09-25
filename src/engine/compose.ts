@@ -13,6 +13,7 @@ import {
   emptyBBox,
   extendBBox,
   segmentInside,
+  rotateRegion,
   translateRegion,
 } from "./geometry";
 import { tatamiFill } from "./fill";
@@ -117,10 +118,8 @@ interface Part {
   fillRule: "nonzero" | "evenodd";
 }
 
-function elementParts(
-  el: DesignElement,
-  fonts: Map<string, opentype.Font>,
-): Part[] {
+/** Parts of an element centred on (0,0), before rotation and positioning. */
+function localParts(el: DesignElement, fonts: Map<string, opentype.Font>): Part[] {
   if (el.kind === "text") {
     const font = fonts.get(el.fontId);
     if (!font || !el.text.trim()) return [];
@@ -129,33 +128,44 @@ function elementParts(
       height: el.height,
       letterSpacing: el.letterSpacing,
       lineSpacing: el.lineSpacing,
-    }).map((r) => ({
-      region: translateRegion(r, el.x, el.y),
-      color: el.color,
-      fillRule: "nonzero",
-    }));
+      align: el.align,
+      arc: el.arc,
+      arcRadius: el.arcRadius,
+    }).map((r) => ({ region: r, color: el.color, fillRule: "nonzero" }));
   }
   if (el.kind === "shape") {
-    return [
-      {
-        region: translateRegion(
-          shapeRegion(el.shape, el.width, el.height),
-          el.x,
-          el.y,
-        ),
-        color: el.color,
-        fillRule: "nonzero",
-      },
-    ];
+    return [{ region: shapeRegion(el.shape, el.width, el.height), color: el.color, fillRule: "nonzero" }];
   }
   const scale = el.width / (el.sourceWidth || 1);
   return el.parts.map((part) => ({
-    region: part.rings.map((ring) =>
-      ring.map((p) => [p[0] * scale + el.x, p[1] * scale + el.y] as Pt),
-    ),
+    region: part.rings.map((ring) => ring.map((p) => [p[0] * scale, p[1] * scale] as Pt)),
     color: el.singleColor ? el.color : part.color,
     fillRule: part.fillRule,
   }));
+}
+
+/** Size of an element before rotation (mm), used for selection handles. */
+export interface ElementBox {
+  w: number;
+  h: number;
+}
+
+function elementParts(
+  el: DesignElement,
+  fonts: Map<string, opentype.Font>,
+): { parts: Part[]; box: ElementBox } {
+  const local = localParts(el, fonts);
+  const bb = emptyBBox();
+  for (const part of local) for (const ring of part.region) for (const p of ring) extendBBox(bb, p);
+  const box = isFinite(bb.minX)
+    ? { w: Math.max(bb.maxX - bb.minX, 2 * Math.max(bb.maxX, -bb.minX)), h: Math.max(bb.maxY - bb.minY, 2 * Math.max(bb.maxY, -bb.minY)) }
+    : { w: 0, h: 0 };
+  const rad = ((el.rotation ?? 0) * Math.PI) / 180;
+  const parts = local.map((part) => ({
+    ...part,
+    region: translateRegion(rad ? rotateRegion(part.region, rad) : part.region, el.x, el.y),
+  }));
+  return { parts, box };
 }
 
 /** Outline stitch length: shorter for small letters so curves stay round. */
@@ -182,7 +192,7 @@ function sewRegion(
       for (const s of tatamiFill(
         region,
         {
-          angleDeg: el.angle + 90,
+          angleDeg: el.angle + (el.rotation ?? 0) + 90,
           spacing: fabric.underlaySpacing,
           stitchLength: 3.0,
           endAdjust: -0.5,
@@ -197,7 +207,7 @@ function sewRegion(
     for (const s of tatamiFill(
       region,
       {
-        angleDeg: el.angle,
+        angleDeg: el.angle + (el.rotation ?? 0),
         spacing: el.density,
         stitchLength: FILL_STITCH_MM,
         endAdjust: fabric.pullComp,
@@ -247,6 +257,8 @@ export interface GeneratedDesign {
   stitches: number[][];
   /** Jumps that were replaced by hidden travel stitches. */
   travels: number;
+  /** Unrotated size of every element, by id. */
+  boxes: Record<string, ElementBox>;
   /** One colour per colour block, in sewing order. */
   blockColors: string[];
   /** Size of the stitched area in mm. */
@@ -262,8 +274,10 @@ export function generateStitches(
   const fabric = FABRIC_PROFILES[fabricId] ?? FABRIC_PROFILES[DEFAULT_FABRIC];
   const b = new StitchBuilder();
   const blockColors: string[] = [];
+  const boxes: Record<string, ElementBox> = {};
   for (const el of elements) {
-    const parts = elementParts(el, fonts);
+    const { parts, box } = elementParts(el, fonts);
+    boxes[el.id] = box;
     // Text glyphs and shapes are sewn nearest-first; SVG parts keep their
     // document order because later shapes are meant to lie on top.
     const todo = [...parts];
@@ -297,6 +311,7 @@ export function generateStitches(
   const empty = !isFinite(box.minX);
   return {
     stitches: b.stitches,
+    boxes,
     travels: b.travels,
     blockColors,
     width: empty ? 0 : box.maxX - box.minX,

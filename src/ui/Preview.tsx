@@ -3,6 +3,19 @@ import { MOVE } from "../engine/constants";
 import type { GeneratedDesign } from "../engine/compose";
 import { useT, type TranslationKey } from "../i18n";
 import { usePreviewSettings, FABRICS } from "./usePreviewSettings";
+import type { DesignElement } from "../designer/types";
+import {
+  type DragStart,
+  type Guides,
+  type View,
+  dragMove,
+  dragRotate,
+  dragScale,
+  drawSelection,
+  hitElement,
+  hitHandle,
+  toMm,
+} from "./selection";
 
 /** Brother PP1 embroidery area in mm (used until the machine reports its own). */
 export const DEFAULT_HOOP_MM = 100;
@@ -22,16 +35,15 @@ function draw(
   design: GeneratedDesign,
   fabric: string,
   showJumps: boolean,
-  zoom: number,
-  pan: { x: number; y: number },
+  view: View,
   hoop: { w: number; h: number },
   sewnFraction: number | null,
 ) {
   const dpr = window.devicePixelRatio || 1;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, w, h);
-  const scale = Math.min(w / (hoop.w + 24), h / (hoop.h + 24)) * zoom; // px per mm
-  ctx.translate(w / 2 + pan.x, h / 2 + pan.y);
+  const scale = view.scale; // px per mm
+  ctx.translate(view.ox, view.oy);
   ctx.scale(scale, scale);
 
   // Hoop: fabric inside, a double ring outside
@@ -120,17 +132,33 @@ function draw(
   }
 }
 
+interface PreviewProps {
+  design: GeneratedDesign;
+  hoop: { w: number; h: number };
+  sewnFraction: number | null;
+  fitsHoop: boolean;
+  elements: DesignElement[];
+  selectedId: string | null;
+  onSelect: (id: string | null) => void;
+  onEdit: (id: string, patch: Partial<DesignElement>, key: string) => void;
+  onCenterDesign: () => void;
+}
+
+type DragState =
+  | { mode: "pan"; sx: number; sy: number; pan: { x: number; y: number }; moved: boolean }
+  | { mode: "move" | "scale" | "rotate"; start: DragStart; key: string };
+
 export function Preview({
   design,
   hoop,
   sewnFraction,
   fitsHoop,
-}: {
-  design: GeneratedDesign;
-  hoop: { w: number; h: number };
-  sewnFraction: number | null;
-  fitsHoop: boolean;
-}) {
+  elements,
+  selectedId,
+  onSelect,
+  onEdit,
+  onCenterDesign,
+}: PreviewProps) {
   const t = useT();
   const { fabric, setFabric, showJumps, setShowJumps } = usePreviewSettings();
   const wrap = useRef<HTMLDivElement>(null);
@@ -138,7 +166,17 @@ export function Preview({
   const [size, setSize] = useState({ w: 400, h: 400 });
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
-  const drag = useRef<{ x: number; y: number } | null>(null);
+  const [guides, setGuides] = useState<Guides>({ x: false, y: false });
+  const [cursor, setCursor] = useState("grab");
+  const drag = useRef<DragState | null>(null);
+
+  const view: View = {
+    scale: Math.min(size.w / (hoop.w + 24), size.h / (hoop.h + 24)) * zoom,
+    ox: size.w / 2 + pan.x,
+    oy: size.h / 2 + pan.y,
+  };
+  const selected = elements.find((e) => e.id === selectedId) ?? null;
+  const selectedBox = selected ? design.boxes[selected.id] : undefined;
 
   useEffect(() => {
     const el = wrap.current;
@@ -157,8 +195,73 @@ export function Preview({
     c.width = Math.round(size.w * dpr);
     c.height = Math.round(size.h * dpr);
     const ctx = c.getContext("2d");
-    if (ctx) draw(ctx, size.w, size.h, design, fabric, showJumps, zoom, pan, hoop, sewnFraction);
-  }, [design, fabric, showJumps, zoom, pan, size, hoop, sewnFraction]);
+    if (!ctx) return;
+    draw(ctx, size.w, size.h, design, fabric, showJumps, view, hoop, sewnFraction);
+    if (selected && selectedBox && selectedBox.w > 0) {
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      drawSelection(ctx, view, selected, selectedBox, guides, hoop);
+    }
+    // view is derived from size/zoom/pan, which are in the list
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [design, fabric, showJumps, zoom, pan, size, hoop, sewnFraction, selected, selectedBox, guides]);
+
+  const pointerMm = (e: React.PointerEvent) => {
+    const r = wrap.current!.getBoundingClientRect();
+    return toMm(view, e.clientX - r.left, e.clientY - r.top);
+  };
+
+  const onPointerDown = (e: React.PointerEvent) => {
+    const p = pointerMm(e);
+    e.currentTarget.setPointerCapture(e.pointerId);
+    const key = `drag:${Date.now()}`;
+    if (selected && selectedBox) {
+      const handle = hitHandle(view, selected, selectedBox, p);
+      if (handle) {
+        drag.current = { mode: handle, start: { el: selected, box: selectedBox, p }, key };
+        return;
+      }
+    }
+    const hit = hitElement(view, elements, design.boxes, p);
+    if (hit) {
+      onSelect(hit.id);
+      drag.current = { mode: "move", start: { el: hit, box: design.boxes[hit.id], p }, key };
+      return;
+    }
+    drag.current = { mode: "pan", sx: e.clientX, sy: e.clientY, pan, moved: false };
+  };
+
+  const onPointerMove = (e: React.PointerEvent) => {
+    const d = drag.current;
+    const p = pointerMm(e);
+    if (!d) {
+      // hover feedback
+      if (selected && selectedBox && hitHandle(view, selected, selectedBox, p))
+        setCursor(hitHandle(view, selected, selectedBox, p) === "rotate" ? "crosshair" : "nwse-resize");
+      else setCursor(hitElement(view, elements, design.boxes, p) ? "move" : "grab");
+      return;
+    }
+    if (d.mode === "pan") {
+      const dx = e.clientX - d.sx;
+      const dy = e.clientY - d.sy;
+      if (Math.abs(dx) + Math.abs(dy) > 3) d.moved = true;
+      setPan({ x: d.pan.x + dx, y: d.pan.y + dy });
+      return;
+    }
+    const id = d.start.el.id;
+    if (d.mode === "move") {
+      const { patch, guides: g } = dragMove(view, d.start, p, e.altKey);
+      setGuides(g);
+      onEdit(id, patch, d.key);
+    } else if (d.mode === "scale") onEdit(id, dragScale(d.start, p), d.key);
+    else onEdit(id, dragRotate(d.start, p, e.shiftKey), d.key);
+  };
+
+  const onPointerUp = () => {
+    const d = drag.current;
+    if (d?.mode === "pan" && !d.moved) onSelect(null);
+    drag.current = null;
+    setGuides({ x: false, y: false });
+  };
 
   return (
     <div className="flex h-full min-h-[420px] flex-col gap-3">
@@ -186,7 +289,15 @@ export function Preview({
           />
           {t("preview.jumps")}
         </label>
-        <div className="ml-auto flex overflow-hidden rounded-md ring-1 ring-denim-200">
+        <button
+          type="button"
+          onClick={onCenterDesign}
+          disabled={design.stitches.length === 0}
+          className="ml-auto rounded-md bg-white px-2.5 py-1 text-sm text-denim-900 ring-1 ring-denim-200 hover:bg-denim-50 disabled:opacity-40"
+        >
+          {t("preview.centerDesign")}
+        </button>
+        <div className="flex overflow-hidden rounded-md ring-1 ring-denim-200">
           {[
             { label: "−", title: t("preview.zoomOut"), fn: () => setZoom((z) => Math.max(0.5, z / 1.25)) },
             {
@@ -215,16 +326,13 @@ export function Preview({
 
       <div
         ref={wrap}
-        className="relative flex-1 cursor-grab overflow-hidden rounded-xl bg-denim-100 active:cursor-grabbing"
+        className="relative flex-1 overflow-hidden rounded-xl bg-denim-100"
         onWheel={(e) => setZoom((z) => Math.min(8, Math.max(0.5, z * (e.deltaY < 0 ? 1.1 : 1 / 1.1))))}
-        onPointerDown={(e) => {
-          drag.current = { x: e.clientX - pan.x, y: e.clientY - pan.y };
-          e.currentTarget.setPointerCapture(e.pointerId);
-        }}
-        onPointerMove={(e) => {
-          if (drag.current) setPan({ x: e.clientX - drag.current.x, y: e.clientY - drag.current.y });
-        }}
-        onPointerUp={() => (drag.current = null)}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
+        style={{ cursor, touchAction: "none" }}
       >
         <canvas ref={canvas} className="absolute inset-0 h-full w-full" />
         {design.stitches.length === 0 && (
@@ -233,6 +341,7 @@ export function Preview({
           </p>
         )}
       </div>
+      <p className="text-xs text-denim-500">{t("preview.hint")}</p>
       {!fitsHoop && design.stitches.length > 0 && (
         <p className="rounded-md bg-thread-100 px-3 py-2 text-sm text-denim-900">{t("preview.outside", { w: Math.round(hoop.w), h: Math.round(hoop.h) })}</p>
       )}

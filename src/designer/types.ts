@@ -24,7 +24,12 @@ export interface BaseElement {
   underlay: boolean;
   /** Width of the satin border in mode "fill-satin" (mm). */
   borderWidth?: number;
+  /** Rotation around the element centre in degrees (clockwise). */
+  rotation?: number;
 }
+
+export type TextAlign = "left" | "center" | "right";
+export type TextArc = "none" | "top" | "bottom";
 
 export interface TextElement extends BaseElement {
   kind: "text";
@@ -36,6 +41,12 @@ export interface TextElement extends BaseElement {
   letterSpacing: number;
   /** Line distance as a factor of the letter height. */
   lineSpacing: number;
+  /** Alignment of multi-line text. */
+  align?: TextAlign;
+  /** Text along a circle: "top" bows upwards, "bottom" like a smile. */
+  arc?: TextArc;
+  /** Radius of the arc in mm. */
+  arcRadius?: number;
 }
 
 export interface ShapeElement extends BaseElement {

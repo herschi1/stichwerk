@@ -5,7 +5,7 @@ import type { DesignElement } from "./types";
 import type { FabricProfileId } from "../engine/profiles";
 import { loadFont, useCustomFonts } from "./fonts";
 
-const EMPTY: GeneratedDesign = { stitches: [], travels: 0, blockColors: [], width: 0, height: 0 };
+const EMPTY: GeneratedDesign = { stitches: [], travels: 0, boxes: {}, blockColors: [], width: 0, height: 0 };
 
 /** Regenerates the stitches (debounced) whenever the design changes. */
 export function useGeneratedDesign(elements: DesignElement[], fabric: FabricProfileId) {
@@ -28,7 +28,7 @@ export function useGeneratedDesign(elements: DesignElement[], fabric: FabricProf
       } catch (e) {
         if (!cancelled) setError(e);
       }
-    }, 200);
+    }, 80);
     return () => {
       cancelled = true;
       window.clearTimeout(timer);

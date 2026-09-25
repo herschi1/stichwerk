@@ -6,19 +6,34 @@ import type { ImportedSvg } from "../io/svg";
 import { defaultColor, nearestThread } from "./palette";
 import { DEFAULT_FABRIC, type FabricProfileId } from "../engine/profiles";
 
+const HISTORY_LIMIT = 100;
+/** Edits with the same key within this time count as one undo step. */
+const COALESCE_MS = 1200;
+
 interface DesignState {
   elements: DesignElement[];
   fabric: FabricProfileId;
-  setFabric: (fabric: FabricProfileId) => void;
   selectedId: string | null;
+  past: DesignElement[][];
+  future: DesignElement[][];
+  lastKey: string | null;
+  lastTime: number;
+
+  setFabric: (fabric: FabricProfileId) => void;
   addText: () => void;
   addShape: () => void;
   addSvg: (svg: ImportedSvg, name: string) => void;
-  update: (id: string, patch: Partial<DesignElement>) => void;
+  /** `key`: edits with the same key close together become one undo step. */
+  update: (id: string, patch: Partial<DesignElement>, key?: string) => void;
+  /** Move several elements at once (e.g. centre the whole design). */
+  moveAll: (dx: number, dy: number) => void;
   remove: (id: string) => void;
+  duplicate: (id: string) => void;
   moveInOrder: (id: string, dir: -1 | 1) => void;
   select: (id: string | null) => void;
   replaceAll: (elements: DesignElement[], fabric?: FabricProfileId) => void;
+  undo: () => void;
+  redo: () => void;
 }
 
 const newId = () => Math.random().toString(36).slice(2, 10);
@@ -30,7 +45,23 @@ const fillDefaults = () => ({
   mode: "fill" as const,
   density: 0.4,
   underlay: true,
+  rotation: 0,
 });
+
+type HistoryFields = Pick<DesignState, "past" | "future" | "lastKey" | "lastTime">;
+
+/** Record the current elements as an undo step (unless coalesced with the last one). */
+function record(s: DesignState, key: string | null = null): HistoryFields {
+  const now = Date.now();
+  if (key && key === s.lastKey && now - s.lastTime < COALESCE_MS)
+    return { past: s.past, future: [], lastKey: key, lastTime: now };
+  return {
+    past: [...s.past, s.elements].slice(-HISTORY_LIMIT),
+    future: [],
+    lastKey: key,
+    lastTime: now,
+  };
+}
 
 export const useDesignStore = create<DesignState>()(
   persist(
@@ -38,6 +69,11 @@ export const useDesignStore = create<DesignState>()(
       elements: [],
       selectedId: null,
       fabric: DEFAULT_FABRIC,
+      past: [],
+      future: [],
+      lastKey: null,
+      lastTime: 0,
+
       setFabric: (fabric) => set({ fabric }),
 
       addText: () =>
@@ -54,8 +90,11 @@ export const useDesignStore = create<DesignState>()(
             angle: 0,
             mode: "satin",
             density: 0.3,
+            align: "center",
+            arc: "none",
+            arcRadius: 40,
           };
-          return { elements: [...s.elements, el], selectedId: el.id };
+          return { ...record(s), elements: [...s.elements, el], selectedId: el.id };
         }),
 
       addShape: () =>
@@ -69,7 +108,7 @@ export const useDesignStore = create<DesignState>()(
             height: 27,
             angle: 45,
           };
-          return { elements: [...s.elements, el], selectedId: el.id };
+          return { ...record(s), elements: [...s.elements, el], selectedId: el.id };
         }),
 
       addSvg: (svg, name) =>
@@ -89,19 +128,43 @@ export const useDesignStore = create<DesignState>()(
             singleColor: false,
             angle: 45,
           };
-          return { elements: [...s.elements, el], selectedId: el.id };
+          return { ...record(s), elements: [...s.elements, el], selectedId: el.id };
         }),
 
-      update: (id, patch) =>
+      update: (id, patch, key) =>
         set((s) => ({
+          ...record(s, key ?? `edit:${id}:${Object.keys(patch).sort().join(",")}`),
           elements: s.elements.map((e) => (e.id === id ? ({ ...e, ...patch } as DesignElement) : e)),
+        })),
+
+      moveAll: (dx, dy) =>
+        set((s) => ({
+          ...record(s),
+          elements: s.elements.map((e) => ({
+            ...e,
+            x: Math.round((e.x + dx) * 10) / 10,
+            y: Math.round((e.y + dy) * 10) / 10,
+          })),
         })),
 
       remove: (id) =>
         set((s) => ({
+          ...record(s),
           elements: s.elements.filter((e) => e.id !== id),
           selectedId: s.selectedId === id ? null : s.selectedId,
         })),
+
+      duplicate: (id) =>
+        set((s) => {
+          const i = s.elements.findIndex((e) => e.id === id);
+          if (i < 0) return s;
+          const copy = { ...structuredClone(s.elements[i]), id: newId() };
+          copy.x += 5;
+          copy.y += 5;
+          const elements = [...s.elements];
+          elements.splice(i + 1, 0, copy);
+          return { ...record(s), elements, selectedId: copy.id };
+        }),
 
       moveInOrder: (id, dir) =>
         set((s) => {
@@ -110,13 +173,49 @@ export const useDesignStore = create<DesignState>()(
           if (i < 0 || j < 0 || j >= s.elements.length) return s;
           const elements = [...s.elements];
           [elements[i], elements[j]] = [elements[j], elements[i]];
-          return { elements };
+          return { ...record(s), elements };
         }),
 
       select: (id) => set({ selectedId: id }),
+
       replaceAll: (elements, fabric) =>
-        set((s) => ({ elements, fabric: fabric ?? s.fabric, selectedId: elements[0]?.id ?? null })),
+        set((s) => ({
+          ...record(s),
+          elements,
+          fabric: fabric ?? s.fabric,
+          selectedId: elements[0]?.id ?? null,
+        })),
+
+      undo: () =>
+        set((s) => {
+          if (!s.past.length) return s;
+          const elements = s.past[s.past.length - 1];
+          return {
+            elements,
+            past: s.past.slice(0, -1),
+            future: [s.elements, ...s.future].slice(0, HISTORY_LIMIT),
+            lastKey: null,
+            selectedId: elements.some((e) => e.id === s.selectedId) ? s.selectedId : null,
+          };
+        }),
+
+      redo: () =>
+        set((s) => {
+          if (!s.future.length) return s;
+          const [elements, ...future] = s.future;
+          return {
+            elements,
+            past: [...s.past, s.elements].slice(-HISTORY_LIMIT),
+            future,
+            lastKey: null,
+            selectedId: elements.some((e) => e.id === s.selectedId) ? s.selectedId : null,
+          };
+        }),
     }),
-    { name: "stichwerk-design" },
+    {
+      name: "stichwerk-design",
+      // the undo history is not stored between visits
+      partialize: (s) => ({ elements: s.elements, selectedId: s.selectedId, fabric: s.fabric }),
+    },
   ),
 );

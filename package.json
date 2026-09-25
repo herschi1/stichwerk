@@ -1,7 +1,7 @@
 {
   "name": "stichwerk",
   "private": true,
-  "version": "0.3.4",
+  "version": "0.4.0",
   "type": "module",
   "description": "Stichwerk – Stickmuster gestalten und an die Brother PP1 senden",
   "scripts": {

@@ -5,7 +5,7 @@ import { useDesignStore } from "../designer/useDesignStore";
 import { DEFAULT_FONT_ID, fontInfo, isFontAvailable, registerCustomFont } from "../designer/fonts";
 import { FontPicker } from "./FontPicker";
 import { ColorPicker } from "./ColorPicker";
-import type { DesignElement, ShapeKind, StitchMode } from "../designer/types";
+import type { DesignElement, ShapeKind, StitchMode, TextAlign, TextArc } from "../designer/types";
 import { Field, Group, NumField, Panel, inputClass } from "./fields";
 import { FABRIC_PROFILES, type FabricProfileId } from "../engine/profiles";
 
@@ -22,9 +22,29 @@ function elementLabel(el: DesignElement, t: TFunction): string {
 
 export function ElementPanel({ onError }: { onError: (msg: string) => void }) {
   const t = useT();
-  const { elements, selectedId, addText, addShape, update, remove, moveInOrder, select, fabric, setFabric } =
-    useDesignStore(
+  const {
+    elements,
+    selectedId,
+    addText,
+    addShape,
+    update,
+    remove,
+    moveInOrder,
+    select,
+    fabric,
+    setFabric,
+    undo,
+    redo,
+    duplicate,
+    canUndo,
+    canRedo,
+  } = useDesignStore(
       useShallow((s) => ({
+        undo: s.undo,
+        redo: s.redo,
+        duplicate: s.duplicate,
+        canUndo: s.past.length > 0,
+        canRedo: s.future.length > 0,
         fabric: s.fabric,
         setFabric: s.setFabric,
         elements: s.elements,
@@ -103,6 +123,18 @@ export function ElementPanel({ onError }: { onError: (msg: string) => void }) {
           >
             {t("elements.addShape")}
           </button>
+        </div>
+
+        <div className="mb-3 flex gap-1">
+          <IconButton label={t("elements.undo")} disabled={!canUndo} onClick={undo}>
+            ↶
+          </IconButton>
+          <IconButton label={t("elements.redo")} disabled={!canRedo} onClick={redo}>
+            ↷
+          </IconButton>
+          <IconButton label={t("elements.duplicate")} disabled={!selectedId} onClick={() => selectedId && duplicate(selectedId)}>
+            ⧉
+          </IconButton>
         </div>
 
         {elements.length === 0 ? (
@@ -212,6 +244,53 @@ export function ElementPanel({ onError }: { onError: (msg: string) => void }) {
               </>
             )}
 
+            {selected.kind === "text" && (
+              <div className="grid grid-cols-2 gap-2">
+                <Field label={t("edit.arc")}>
+                  <select
+                    className={inputClass}
+                    value={selected.arc ?? "none"}
+                    onChange={(e) => update(selected.id, { arc: e.target.value as TextArc })}
+                  >
+                    {(["none", "top", "bottom"] as TextArc[]).map((a) => (
+                      <option key={a} value={a}>
+                        {t(`arc.${a}` as TranslationKey)}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+                {(selected.arc ?? "none") === "none" ? (
+                  <Group label={t("edit.align")}>
+                    <div className="grid grid-cols-3 overflow-hidden rounded-md ring-1 ring-denim-200">
+                      {(["left", "center", "right"] as TextAlign[]).map((a) => (
+                        <button
+                          key={a}
+                          type="button"
+                          aria-pressed={(selected.align ?? "center") === a}
+                          onClick={() => update(selected.id, { align: a })}
+                          className={
+                            "py-1.5 text-xs " +
+                            ((selected.align ?? "center") === a ? "bg-denim-900 text-white" : "bg-white hover:bg-denim-50")
+                          }
+                        >
+                          {t(`align.${a}` as TranslationKey)}
+                        </button>
+                      ))}
+                    </div>
+                  </Group>
+                ) : (
+                  <NumField
+                    label={t("edit.arcRadius")}
+                    value={selected.arcRadius ?? 40}
+                    step={1}
+                    min={10}
+                    max={200}
+                    onChange={(v) => update(selected.id, { arcRadius: Math.min(200, Math.max(10, v)) })}
+                  />
+                )}
+              </div>
+            )}
+
             {selected.kind === "shape" && (
               <>
                 <Field label={t("edit.shape")}>
@@ -282,6 +361,33 @@ export function ElementPanel({ onError }: { onError: (msg: string) => void }) {
                 step={0.5}
                 onChange={(v) => update(selected.id, { y: v })}
               />
+            </div>
+
+            <div className="grid grid-cols-[1fr_auto] items-end gap-2">
+              <NumField
+                label={t("edit.rotation")}
+                value={selected.rotation ?? 0}
+                step={5}
+                min={-180}
+                max={180}
+                onChange={(v) => update(selected.id, { rotation: ((((v + 180) % 360) + 360) % 360) - 180 })}
+              />
+              <div className="flex gap-1 pb-0.5" title={t("edit.centerTitle")}>
+                <button
+                  type="button"
+                  onClick={() => update(selected.id, { x: 0 })}
+                  className="rounded-md bg-white px-2 py-1.5 text-xs ring-1 ring-denim-200 hover:bg-denim-50"
+                >
+                  {t("edit.centerH")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => update(selected.id, { y: 0 })}
+                  className="rounded-md bg-white px-2 py-1.5 text-xs ring-1 ring-denim-200 hover:bg-denim-50"
+                >
+                  {t("edit.centerV")}
+                </button>
+              </div>
             </div>
 
             <Field label={t("edit.mode")}>

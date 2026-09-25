@@ -10,6 +10,7 @@ import {
   type Ring,
   cleanRing,
   regionBBox,
+  rotatePt,
   translateRegion,
 } from "./geometry";
 
@@ -19,6 +20,9 @@ export interface TextLayoutOptions {
   height: number;
   letterSpacing: number;
   lineSpacing: number;
+  align?: "left" | "center" | "right";
+  arc?: "none" | "top" | "bottom";
+  arcRadius?: number;
 }
 
 /** Curve flattening tolerance: segment count derived from control polygon length. */
@@ -113,33 +117,69 @@ export function layoutText(
   const lineHeight = opts.height * opts.lineSpacing;
 
   const lines = opts.text.split(/\r?\n/);
-  const glyphLines: Region[][] = [];
+  interface Placed {
+    rings: Ring[];
+    /** Horizontal centre of the glyph cell and its line. */
+    cx: number;
+    line: number;
+  }
+  const placedLines: Placed[][] = [];
   const widths: number[] = [];
 
   lines.forEach((line, li) => {
     const glyphs = font.stringToGlyphs(line);
-    const regions: Region[] = [];
+    const placed: Placed[] = [];
     let x = 0;
     glyphs.forEach((g, i) => {
+      const adv = (g.advanceWidth ?? 0) * scale;
       if (g.index !== 0) {
-        const rings = pathToRings(g.getPath(x, li * lineHeight, fontSize));
-        if (rings.length) regions.push(rings);
+        // baseline of every line at y = 0 here; lines are stacked below
+        const rings = pathToRings(g.getPath(x, 0, fontSize));
+        if (rings.length) placed.push({ rings, cx: x + adv / 2, line: li });
       }
-      x += (g.advanceWidth ?? 0) * scale;
+      x += adv;
       const next = glyphs[i + 1];
       if (next) x += font.getKerningValue(g, next) * scale + opts.letterSpacing;
     });
-    glyphLines.push(regions);
+    placedLines.push(placed);
     widths.push(x);
   });
 
-  // Centre every line horizontally, then centre the whole block.
   const maxWidth = Math.max(0, ...widths);
   const all: Region[] = [];
-  glyphLines.forEach((regions, i) => {
-    const dx = (maxWidth - widths[i]) / 2;
-    for (const r of regions) all.push(translateRegion(r, dx, 0));
+  const arc = opts.arc ?? "none";
+  const R = Math.max(5, opts.arcRadius ?? 40);
+
+  placedLines.forEach((placed, li) => {
+    const w = widths[li];
+    if (arc === "none") {
+      const align = opts.align ?? "center";
+      const dx = align === "left" ? 0 : align === "right" ? maxWidth - w : (maxWidth - w) / 2;
+      for (const g of placed) all.push(translateRegion(g.rings, dx, li * lineHeight));
+      return;
+    }
+    // Along a circle: every glyph is rotated around its own cell centre and
+    // placed on the circle at the arc length that matches its position.
+    const top = arc === "top";
+    const r = top ? Math.max(5, R - li * lineHeight) : R + li * lineHeight;
+    for (const g of placed) {
+      const s = g.cx - w / 2;
+      const theta = s / r;
+      const angle = top ? theta : -theta;
+      const base: Pt = top
+        ? [r * Math.sin(theta), R - r * Math.cos(theta)]
+        : [r * Math.sin(theta), -R + r * Math.cos(theta)];
+      all.push(
+        g.rings.map((ring) =>
+          ring.map((p) => {
+            const q = rotatePt([p[0] - g.cx, p[1]], angle);
+            return [q[0] + base[0], q[1] + base[1]] as Pt;
+          }),
+        ),
+      );
+    }
   });
+
   if (all.length === 0) return [];
   const b = regionBBox(all);
   const cx = (b.minX + b.maxX) / 2;
