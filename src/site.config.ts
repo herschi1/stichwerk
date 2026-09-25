@@ -8,9 +8,9 @@
  */
 export const SITE = {
   /** Name der Medieninhaberin, z. B. "Herschmann Christian" */
-  ownerName: "",
+  ownerName: "Herschmann Christian",
   /** Wohnort, z. B. "Feldkirch, Österreich" */
-  ownerLocation: "",
+  ownerLocation: "Feldkirch, Österreich",
   /** Wo der Quellcode liegt (von der GPL verlangt) */
   repoUrl: "https://github.com/herschi1/stichwerk",
 };
