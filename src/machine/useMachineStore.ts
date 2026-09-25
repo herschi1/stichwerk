@@ -52,6 +52,28 @@ const service = new BrotherPP1Service();
 let pollTimer: ReturnType<typeof setTimeout> | null = null;
 let manualDisconnect = false;
 
+// The design sent to the machine is remembered in the browser, so colour
+// display and progress still work after the page was reloaded mid-sewing.
+const UPLOADED_KEY = "stichwerk-uploaded";
+
+function saveUploaded(u: UploadedDesign | null) {
+  try {
+    if (u) localStorage.setItem(UPLOADED_KEY, JSON.stringify(u));
+    else localStorage.removeItem(UPLOADED_KEY);
+  } catch {
+    // storage not available: just no resume
+  }
+}
+
+function loadUploaded(): UploadedDesign | null {
+  try {
+    const raw = localStorage.getItem(UPLOADED_KEY);
+    return raw ? (JSON.parse(raw) as UploadedDesign) : null;
+  } catch {
+    return null;
+  }
+}
+
 export function designKey(stitches: number[][]): string {
   let h = stitches.length;
   for (const s of stitches) h = (h * 31 + s[0] * 7 + s[1] * 13 + s[2] + s[3] * 17) | 0;
@@ -157,6 +179,11 @@ export const useMachineStore = create<MachineState>((set, get) => {
         } catch {
           // no pattern on the machine yet
         }
+        // Same pattern still on the machine? Then pick up where we left off.
+        const saved = loadUploaded();
+        const onMachine = get().patternInfo?.totalStitches ?? 0;
+        if (!get().uploaded && saved && onMachine > 0 && saved.totalStitches === onMachine)
+          set({ uploaded: saved });
         stopPolling();
         pollTimer = setTimeout(poll, 1000);
       } catch (e) {
@@ -198,13 +225,15 @@ export const useMachineStore = create<MachineState>((set, get) => {
           // "offset" is simply the design's own centre: the machine moves nothing.
           const centre = { x: (bounds.minX + bounds.maxX) / 2, y: (bounds.minY + bounds.maxY) / 2 };
           await service.uploadPattern(pen, (p) => set({ uploadProgress: p }), bounds, centre);
+          const uploaded: UploadedDesign = {
+            key: designKey(stitches),
+            blockColors,
+            colorBlocks: decoded.colorBlocks,
+            totalStitches: decoded.stitches.length,
+          };
+          saveUploaded(uploaded);
           set({
-            uploaded: {
-              key: designKey(stitches),
-              blockColors,
-              colorBlocks: decoded.colorBlocks,
-              totalStitches: decoded.stitches.length,
-            },
+            uploaded,
             progress: null,
             adjustedStitch: null,
             lastRolledBackError: null,
@@ -233,6 +262,7 @@ export const useMachineStore = create<MachineState>((set, get) => {
     deletePattern: () =>
       run("machine.err.command", async () => {
         await service.deletePattern();
+        saveUploaded(null);
         set({ patternInfo: null, progress: null, uploaded: null });
         await refreshStatus();
       }),

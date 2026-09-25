@@ -4,6 +4,7 @@ import type { GeneratedDesign } from "../engine/compose";
 import { useT, type TranslationKey } from "../i18n";
 import { usePreviewSettings, FABRICS } from "./usePreviewSettings";
 import type { DesignElement } from "../designer/types";
+import { SimulationBar, useSimulation } from "./Simulation";
 import {
   type DragStart,
   type Guides,
@@ -37,7 +38,7 @@ function draw(
   showJumps: boolean,
   view: View,
   hoop: { w: number; h: number },
-  sewnFraction: number | null,
+  sewnUntil: number | null,
 ) {
   const dpr = window.devicePixelRatio || 1;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -88,7 +89,7 @@ function draw(
   // Stitches: a darker underside first, then the thread colour – reads as thread.
   const st = design.stitches;
   // While sewing, stitches that are still to come are drawn faded.
-  const sewnUntil = sewnFraction === null ? st.length : Math.round(sewnFraction * st.length);
+  const until = sewnUntil === null ? st.length : sewnUntil;
   const threadW = Math.max(0.3, 1.2 / scale);
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
@@ -99,9 +100,9 @@ function draw(
       const color = design.blockColors[block] ?? "#000000";
       ctx.beginPath();
       let started = false;
-      const faded = i >= sewnUntil;
+      const faded = i >= until;
       ctx.globalAlpha = faded ? 0.28 : 1;
-      for (; i < st.length && st[i][3] === block && (i >= sewnUntil) === faded; i++) {
+      for (; i < st.length && st[i][3] === block && (i >= until) === faded; i++) {
         const [x, y, cmd] = st[i];
         if (!started || cmd & MOVE) {
           ctx.moveTo(x / 10, y / 10);
@@ -129,6 +130,23 @@ function draw(
     ctx.strokeStyle = light ? "rgba(23,32,51,0.55)" : "rgba(255,255,255,0.6)";
     ctx.stroke();
     ctx.setLineDash([]);
+  }
+
+  // needle position while simulating or sewing
+  if (sewnUntil !== null && sewnUntil > 0 && sewnUntil <= st.length) {
+    const [x, y] = st[sewnUntil - 1];
+    ctx.beginPath();
+    ctx.arc(x / 10, y / 10, 1.4, 0, Math.PI * 2);
+    ctx.lineWidth = 0.35;
+    ctx.strokeStyle = "#c98a12";
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x / 10 - 2.4, y / 10);
+    ctx.lineTo(x / 10 + 2.4, y / 10);
+    ctx.moveTo(x / 10, y / 10 - 2.4);
+    ctx.lineTo(x / 10, y / 10 + 2.4);
+    ctx.lineWidth = 0.2;
+    ctx.stroke();
   }
 }
 
@@ -169,6 +187,7 @@ export function Preview({
   const [guides, setGuides] = useState<Guides>({ x: false, y: false });
   const [cursor, setCursor] = useState("grab");
   const drag = useRef<DragState | null>(null);
+  const sim = useSimulation(design);
 
   const view: View = {
     scale: Math.min(size.w / (hoop.w + 24), size.h / (hoop.h + 24)) * zoom,
@@ -196,14 +215,19 @@ export function Preview({
     c.height = Math.round(size.h * dpr);
     const ctx = c.getContext("2d");
     if (!ctx) return;
-    draw(ctx, size.w, size.h, design, fabric, showJumps, view, hoop, sewnFraction);
-    if (selected && selectedBox && selectedBox.w > 0) {
+    const sewnUntil = sim.active
+      ? sim.index
+      : sewnFraction === null
+        ? null
+        : Math.round(sewnFraction * design.stitches.length);
+    draw(ctx, size.w, size.h, design, fabric, showJumps, view, hoop, sewnUntil);
+    if (!sim.active && selected && selectedBox && selectedBox.w > 0) {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       drawSelection(ctx, view, selected, selectedBox, guides, hoop);
     }
     // view is derived from size/zoom/pan, which are in the list
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [design, fabric, showJumps, zoom, pan, size, hoop, sewnFraction, selected, selectedBox, guides]);
+  }, [design, fabric, showJumps, zoom, pan, size, hoop, sewnFraction, selected, selectedBox, guides, sim.active, sim.index]);
 
   const pointerMm = (e: React.PointerEvent) => {
     const r = wrap.current!.getBoundingClientRect();
@@ -214,6 +238,10 @@ export function Preview({
     const p = pointerMm(e);
     e.currentTarget.setPointerCapture(e.pointerId);
     const key = `drag:${Date.now()}`;
+    if (sim.active) {
+      drag.current = { mode: "pan", sx: e.clientX, sy: e.clientY, pan, moved: true };
+      return;
+    }
     if (selected && selectedBox) {
       const handle = hitHandle(view, selected, selectedBox, p);
       if (handle) {
@@ -234,6 +262,7 @@ export function Preview({
     const d = drag.current;
     const p = pointerMm(e);
     if (!d) {
+      if (sim.active) return setCursor("grab");
       // hover feedback
       if (selected && selectedBox && hitHandle(view, selected, selectedBox, p))
         setCursor(hitHandle(view, selected, selectedBox, p) === "rotate" ? "crosshair" : "nwse-resize");
@@ -341,7 +370,8 @@ export function Preview({
           </p>
         )}
       </div>
-      <p className="text-xs text-denim-500">{t("preview.hint")}</p>
+      <SimulationBar sim={sim} design={design} />
+      {!sim.active && <p className="text-xs text-denim-500">{t("preview.hint")}</p>}
       {!fitsHoop && design.stitches.length > 0 && (
         <p className="rounded-md bg-thread-100 px-3 py-2 text-sm text-denim-900">{t("preview.outside", { w: Math.round(hoop.w), h: Math.round(hoop.h) })}</p>
       )}
