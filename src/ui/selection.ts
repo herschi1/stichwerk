@@ -114,7 +114,7 @@ export function dragScale(d: DragStart, p: Pt): Partial<DesignElement> {
   const f = Math.max(0.05, Math.hypot(p[0] - c[0], p[1] - c[1]) / f0);
   const clamp = (v: number, lo: number, hi: number) => round1(Math.min(hi, Math.max(lo, v)));
   const el = d.el;
-  if (el.kind === "text") return { height: clamp(el.height * f, 3, 90) };
+  if (el.kind === "text" || el.kind === "monogram") return { height: clamp(el.height * f, 3, 90) };
   if (el.kind === "shape") {
     const g = Math.min(f, 100 / el.width, 100 / el.height);
     return { width: clamp(el.width * g, 3, 100), height: clamp(el.height * g, 3, 100) };

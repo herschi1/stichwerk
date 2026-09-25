@@ -5,6 +5,7 @@ import { useT, type TranslationKey } from "../i18n";
 import { usePreviewSettings, FABRICS } from "./usePreviewSettings";
 import type { DesignElement } from "../designer/types";
 import { SimulationBar, useSimulation } from "./Simulation";
+import { HelpButton } from "./HelpButton";
 import {
   type DragStart,
   type Guides,
@@ -318,6 +319,7 @@ export function Preview({
           />
           {t("preview.jumps")}
         </label>
+        <HelpButton topic="help.preview" />
         <button
           type="button"
           onClick={onCenterDesign}

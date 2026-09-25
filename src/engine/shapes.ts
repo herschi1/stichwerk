@@ -55,6 +55,9 @@ export function shapeRegion(
       }
       break;
     }
+    case "diamond":
+      pts.push([0, -1], [1, 0], [0, 1], [-1, 0]);
+      break;
     case "star": {
       const spikes = 5;
       const inner = 0.45;

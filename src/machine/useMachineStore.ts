@@ -16,6 +16,8 @@ export interface UploadedDesign {
   /** Fingerprint of the stitch list, to notice later edits. */
   key: string;
   blockColors: string[];
+  /** Appliqué instructions per colour block (null = normal thread change). */
+  blockNotes?: (string | null)[];
   colorBlocks: PenColorBlock[];
   totalStitches: number;
 }
@@ -40,7 +42,7 @@ interface MachineState {
 
   connect: () => Promise<void>;
   disconnect: () => Promise<void>;
-  upload: (stitches: number[][], blockColors: string[]) => Promise<void>;
+  upload: (stitches: number[][], blockColors: string[], blockNotes?: (string | null)[]) => Promise<void>;
   startMaskTrace: () => Promise<void>;
   startSewing: () => Promise<void>;
   deletePattern: () => Promise<void>;
@@ -214,7 +216,7 @@ export const useMachineStore = create<MachineState>((set, get) => {
       }
     },
 
-    upload: (stitches, blockColors) =>
+    upload: (stitches, blockColors, blockNotes) =>
       run("machine.err.upload", async () => {
         set({ isUploading: true, uploadProgress: 0 });
         try {
@@ -228,6 +230,7 @@ export const useMachineStore = create<MachineState>((set, get) => {
           const uploaded: UploadedDesign = {
             key: designKey(stitches),
             blockColors,
+            blockNotes,
             colorBlocks: decoded.colorBlocks,
             totalStitches: decoded.stitches.length,
           };

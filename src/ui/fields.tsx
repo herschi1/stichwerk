@@ -1,23 +1,31 @@
 import type { ReactNode } from "react";
+import type { TranslationKey } from "../i18n";
+import { HelpButton } from "./HelpButton";
 
 export const inputClass =
   "w-full rounded-md border border-denim-200 bg-white px-2 py-1.5 text-sm text-ink " +
   "focus:border-thread-500 focus:outline-none focus:ring-2 focus:ring-thread-500/40";
 
-export function Field({ label, children }: { label: string; children: ReactNode }) {
+export function Field({ label, children, help }: { label: string; children: ReactNode; help?: TranslationKey }) {
   return (
-    <label className="flex flex-col gap-1 text-xs font-medium text-denim-700">
-      {label}
-      {children}
-    </label>
+    <div className="relative">
+      <label className="flex flex-col gap-1 text-xs font-medium text-denim-700">
+        <span className={help ? "pr-5" : ""}>{label}</span>
+        {children}
+      </label>
+      {help && <HelpButton topic={help} className="absolute right-0 top-0" />}
+    </div>
   );
 }
 
 /** Like Field, but not a <label>: for composite controls such as pickers. */
-export function Group({ label, children }: { label: string; children: ReactNode }) {
+export function Group({ label, children, help }: { label: string; children: ReactNode; help?: TranslationKey }) {
   return (
     <div role="group" aria-label={label} className="flex flex-col gap-1 text-xs font-medium text-denim-700">
-      <span>{label}</span>
+      <span className="flex items-center justify-between gap-1">
+        {label}
+        {help && <HelpButton topic={help} />}
+      </span>
       {children}
     </div>
   );
@@ -30,10 +38,11 @@ export function NumField(props: {
   step?: number;
   min?: number;
   max?: number;
+  help?: TranslationKey;
 }) {
-  const { label, value, onChange, step = 1, min, max } = props;
+  const { label, value, onChange, step = 1, min, max, help } = props;
   return (
-    <Field label={label}>
+    <Field label={label} help={help}>
       <input
         type="number"
         className={inputClass}
@@ -54,15 +63,20 @@ export function Panel({
   title,
   children,
   className = "",
+  help,
 }: {
   title?: string;
   children: ReactNode;
   className?: string;
+  help?: TranslationKey;
 }) {
   return (
     <section className={`rounded-xl bg-white shadow-[0_1px_0_rgba(23,32,51,0.08)] ring-1 ring-denim-100 ${className}`}>
       {title && (
-        <h2 className="px-4 pt-3 pb-1 font-display text-sm tracking-wide text-denim-900">{title}</h2>
+        <h2 className="flex items-center justify-between gap-2 px-4 pt-3 pb-1 font-display text-sm tracking-wide text-denim-900">
+          <span className="min-w-0 truncate">{title}</span>
+          {help && <HelpButton topic={help} />}
+        </h2>
       )}
       <div className="px-4 pb-4 pt-2">{children}</div>
     </section>

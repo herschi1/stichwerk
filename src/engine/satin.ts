@@ -12,6 +12,7 @@
 
 import { type Pt, type Region, dist, insideRegion, rotatePt, rotateRegion } from "./geometry";
 import { type Seg, type Stroke, buildBlocks, scanRows, tatamiFill } from "./fill";
+import { offsetRegions } from "./offset";
 
 export interface SatinOptions {
   /** Distance between zigzag stitches in mm. */
@@ -177,6 +178,7 @@ export function satinBorder(
 ): Stroke[] {
   const strokes: Stroke[] = [];
   let cur = from;
+  const inner = new PointIndex(resampleRegion(offsetRegions([region], -width, opts.fillRule), 0.2), Math.max(1, width));
   for (const ring of region) {
     if (ring.length < 3) continue;
     // resample the ring evenly
@@ -195,9 +197,11 @@ export function satinBorder(
       carry = t - d;
     }
     if (samples.length < 4) continue;
-    // smoothed normals: tangent from points ~1 mm before and after
-    const k = Math.max(1, Math.round(1 / opts.spacing));
+    // Inner edge of the band: the outline shrunk by `width` (Clipper handles
+    // corners cleanly). Each outer point is paired with the nearest point of
+    // that inner outline, so stitches fan at inner corners instead of crossing.
     const n = samples.length;
+    const k = Math.max(1, Math.round(1 / opts.spacing));
     const outerPts: Pt[] = [];
     const innerPts: Pt[] = [];
     let flip: number | null = null;
@@ -210,13 +214,13 @@ export function satinBorder(
       const tl = Math.hypot(tx, ty) || 1;
       let nx = -ty / tl;
       let ny = tx / tl;
-      if (flip === null) {
-        flip = insideRegion([p[0] + nx * 0.3, p[1] + ny * 0.3], region, opts.fillRule) ? 1 : -1;
-      }
+      if (flip === null) flip = insideRegion([p[0] + nx * 0.3, p[1] + ny * 0.3], region, opts.fillRule) ? 1 : -1;
       nx *= flip;
       ny *= flip;
       outerPts.push([p[0] - nx * opts.pullComp, p[1] - ny * opts.pullComp]);
-      innerPts.push([p[0] + nx * width, p[1] + ny * width]);
+      const byNormal: Pt = [p[0] + nx * width, p[1] + ny * width];
+      const q = inner.nearest(p, width * 1.6);
+      innerPts.push(q ?? byNormal);
     }
     // start at the sample nearest to the needle
     let start = 0;
@@ -243,4 +247,50 @@ export function satinBorder(
     cur = pts[pts.length - 1];
   }
   return strokes;
+}
+
+function resampleRegion(region: Region, step: number): Pt[] {
+  const out: Pt[] = [];
+  for (const ring of region) {
+    for (let i = 0; i < ring.length; i++) {
+      const a = ring[i];
+      const b = ring[(i + 1) % ring.length];
+      const n = Math.max(1, Math.ceil(dist(a, b) / step));
+      for (let k = 0; k < n; k++) out.push([a[0] + ((b[0] - a[0]) * k) / n, a[1] + ((b[1] - a[1]) * k) / n]);
+    }
+  }
+  return out;
+}
+
+/** Simple grid index for nearest-point lookups. */
+class PointIndex {
+  private cells = new Map<string, Pt[]>();
+  constructor(
+    points: Pt[],
+    private cell: number,
+  ) {
+    for (const p of points) {
+      const key = `${Math.floor(p[0] / cell)},${Math.floor(p[1] / cell)}`;
+      const list = this.cells.get(key);
+      if (list) list.push(p);
+      else this.cells.set(key, [p]);
+    }
+  }
+  nearest(p: Pt, maxDist: number): Pt | null {
+    const r = Math.ceil(maxDist / this.cell);
+    const cx = Math.floor(p[0] / this.cell);
+    const cy = Math.floor(p[1] / this.cell);
+    let best: Pt | null = null;
+    let bd = maxDist;
+    for (let dx = -r; dx <= r; dx++)
+      for (let dy = -r; dy <= r; dy++) {
+        const list = this.cells.get(`${cx + dx},${cy + dy}`);
+        if (!list) continue;
+        for (const q of list) {
+          const d = dist(p, q);
+          if (d < bd) [bd, best] = [d, q];
+        }
+      }
+    return best;
+  }
 }

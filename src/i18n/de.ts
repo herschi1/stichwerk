@@ -274,6 +274,173 @@ export const de = {
   "info.imprint.purpose":
     "Grundlegende Richtung: private, nicht kommerzielle Website mit einem Werkzeug zum Gestalten von Stickmustern.",
 
+  "help.button":
+    "Hilfe",
+  "elements.addMonogram":
+    "+ Monogramm",
+  "label.monogram":
+    "Monogramm: {letters}",
+  "shape.diamond":
+    "Raute",
+  "mode.applique":
+    "Applikation (aufgenähter Stoff)",
+  "stats.title":
+    "Stickdaten",
+  "edit.appliqueHint":
+    "Die Maschine näht zuerst eine Platzierungslinie und hält an. Stoffstück auflegen und Start drücken. Danach wird es festgeheftet und die Maschine hält wieder an: überstehenden Stoff knapp an der Naht abschneiden. Zum Schluss kommt der Satinrand.",
+  "edit.coverWidth":
+    "Randbreite (mm)",
+  "edit.outline":
+    "Rand um die Schrift",
+  "outline.none":
+    "Kein Rand",
+  "outline.border":
+    "Umrandung",
+  "outline.shadow":
+    "Schatten",
+  "edit.outlineWidth":
+    "Randbreite (mm)",
+  "edit.shadowOffset":
+    "Versatz (mm)",
+  "edit.outlineColor":
+    "Farbe von Rand/Schatten",
+  "edit.monoLetters":
+    "Initialen",
+  "edit.monoStyle":
+    "Stil",
+  "mono.classic":
+    "Klassisch (Mitte groß)",
+  "mono.equal":
+    "Gleich groß",
+  "edit.monoFrame":
+    "Rahmen",
+  "frame.none":
+    "Ohne",
+  "frame.circle":
+    "Kreis",
+  "frame.diamond":
+    "Raute",
+  "frame.rect":
+    "Rechteck",
+  "edit.frameWidth":
+    "Rahmen (mm)",
+  "edit.frameGap":
+    "Abstand (mm)",
+  "edit.frameColor":
+    "Farbe des Rahmens",
+  "placement.title":
+    "Position auf dem Shirt",
+  "placement.none":
+    "Keine Vorlage",
+  "placement.max":
+    "max. {w} × {h} cm",
+  "placement.fit":
+    "Größe anpassen",
+  "placement.chestLeft":
+    "Brustlogo links",
+  "placement.chestCenter":
+    "Mitte Brust",
+  "placement.kidsChest":
+    "Kinder-Shirt Brust",
+  "placement.neck":
+    "Nacken",
+  "placement.sleeve":
+    "Ärmel",
+  "placement.chestLeft.how":
+    "Richtwert für Erwachsene: Von vorne gesehen auf der linken Brustseite (also auf der Herzseite der Trägerin). Mitte des Motivs etwa 18–20 cm unter dem Punkt, an dem Kragen und Schulternaht zusammenkommen, und etwa 9–10 cm neben der vorderen Mitte.",
+  "placement.chestCenter.how":
+    "Richtwert für Erwachsene: mittig auf der Vorderseite, Oberkante des Motivs etwa 7–10 cm unter dem Kragen.",
+  "placement.kidsChest.how":
+    "Richtwert: mittig auf der Vorderseite, Oberkante des Motivs etwa 5–7 cm unter dem Kragen.",
+  "placement.neck.how":
+    "Hinten mittig, Oberkante des Motivs etwa 2–3 cm unter der Kragennaht. Schmal halten, sonst wirft der Stoff Falten.",
+  "placement.sleeve.how":
+    "Außen am Ärmel, mittig auf der Ärmelnaht ausgerichtet, Oberkante etwa 8–10 cm unter der Schulternaht. Der Ärmel muss flach und ohne Zug im Rahmen liegen.",
+  "note.applique.place":
+    "Applikation: Lege jetzt das Stoffstück so auf, dass es die genähte Platzierungslinie ganz bedeckt, und drücke an der Maschine Start.",
+  "note.applique.trim":
+    "Applikation: Nimm den Rahmen nicht ab! Schneide den überstehenden Stoff knapp neben der Heftnaht ab und drücke dann Start für den Satinrand.",
+  "noteShort.applique.place":
+    "Stoff auflegen",
+  "noteShort.applique.trim":
+    "Stoff zuschneiden",
+  "help.fabric":
+    "Wähle den Stoff, auf den du stickst. Stichwerk passt danach Zugausgleich, Unterlage und Satindichte an.\nDehnbares Jersey (T-Shirts) braucht mehr Unterlage und Schneidvlies, fester Stoff weniger.",
+  "help.placement":
+    "Wähle, wo das Motiv auf dem Shirt sitzen soll. „Größe anpassen“ bringt das ganze Design auf die passende Größe und in die Rahmenmitte.\nDarunter steht, wo du das Motiv auf dem Shirt anzeichnest. Die Maße sind Richtwerte für Erwachsenen-Shirts.",
+  "help.elements":
+    "Hier legst du Text, Formen und Monogramme an. Gestickt wird von oben nach unten in dieser Liste; mit ↑ ↓ änderst du die Reihenfolge.\n↶ ↷ macht Schritte rückgängig oder wiederholt sie, ⧉ dupliziert das gewählte Element.",
+  "help.kind.text":
+    "Ein Schriftzug. Alle Einstellungen unten gelten nur für diesen Text. In der Vorschau kannst du ihn direkt verschieben, drehen und an den Ecken größer ziehen.",
+  "help.kind.shape":
+    "Eine Grundform wie Herz oder Stern. Als Füllung, mit Rand oder als Applikation mit aufgenähtem Stoff.",
+  "help.kind.svg":
+    "Ein importiertes Logo aus einer SVG-Datei. Jede Farbfläche wird zu einem eigenen Stickbereich; die Farben kannst du einzeln austauschen.",
+  "help.kind.monogram":
+    "Zwei oder drei Initialen, klassisch mit großem Mittelbuchstaben, optional mit Rahmen. Beim klassischen Monogramm steht in der Mitte meist der Anfangsbuchstabe des Nachnamens.",
+  "help.text":
+    "Der Text, der gestickt wird. Mit Enter beginnst du eine neue Zeile.",
+  "help.font":
+    "Die Liste zeigt jede Schrift mit deinem Text. „ab … mm“ ist die kleinste Buchstabenhöhe, bei der die Schrift noch sauber stickt.\nGanz unten kannst du eigene Schriftdateien laden.",
+  "help.height":
+    "Höhe eines Großbuchstabens in Millimetern. Kleinbuchstaben und Unterlängen richten sich danach.\nFür T-Shirts sind 8–20 mm üblich.",
+  "help.letterSpacing":
+    "Zusätzlicher Abstand zwischen den Buchstaben in mm. Etwas mehr Abstand (0,3–1 mm) verhindert, dass Buchstaben beim Sticken zusammenlaufen. Bei Schreibschrift 0 lassen, damit die Buchstaben verbunden bleiben.",
+  "help.lineSpacing":
+    "Abstand der Zeilen als Vielfaches der Buchstabenhöhe. 1,5 ist ein guter Startwert.",
+  "help.arc":
+    "Legt den Text auf einen Kreisbogen: „nach oben“ wölbt sich wie ein Regenbogen, „nach unten“ wie ein Lächeln. Typisch für College- und Vereinslogos.",
+  "help.align":
+    "Richtet mehrzeiligen Text links, mittig oder rechts aus.",
+  "help.arcRadius":
+    "Radius des Kreises, auf dem der Text liegt. Kleiner Radius = starke Krümmung, großer Radius = sanfter Bogen.",
+  "help.shape":
+    "Die Grundform. Breite und Höhe stellst du darunter ein oder ziehst direkt in der Vorschau an den Ecken.",
+  "help.size":
+    "Größe in Millimetern. Der Stickrahmen der PP1 ist 10 × 10 cm groß.",
+  "help.position":
+    "Position der Mitte des Elements, gemessen von der Rahmenmitte. Einfacher geht es direkt in der Vorschau oder mit den Pfeiltasten.",
+  "help.rotation":
+    "Drehung im Uhrzeigersinn in Grad. In der Vorschau drehst du mit dem Kreis über dem Auswahlrahmen, mit gedrückter Umschalttaste in 15°-Schritten.",
+  "help.mode":
+    "Wie die Fläche gestickt wird.\nSatin: glänzend, ideal für Schrift und schmale Formen bis 7 mm.\nFüllung: für größere Flächen.\nMit Kontur oder Satinrand: saubere Kanten.\nNur Kontur: dreifacher Laufstich, gut für sehr kleine Schrift.\nApplikation: ein aufgenähtes Stoffstück mit Satinrand.",
+  "help.angle":
+    "Richtung der Stichreihen in der Füllung. Unterschiedliche Winkel bei benachbarten Flächen lassen sie im Licht verschieden glänzen.",
+  "help.density":
+    "Abstand der Stichreihen in der Füllung. Kleiner = dichter und deckender, aber steifer. 0,4 mm ist ein guter Standard; bei dünnem Jersey eher 0,45.",
+  "help.satinSpacing":
+    "Abstand der Satinstiche. Kleiner = glatter und glänzender, aber mehr Stiche. 0,25–0,35 mm ist üblich.",
+  "help.underlay":
+    "Eine lockere Stichlage unter der eigentlichen Fläche. Sie hält den Stoff fest und verhindert, dass er durchscheint. Fast immer eingeschaltet lassen.",
+  "help.borderWidth":
+    "Breite des Satinrands um die Fläche in mm.",
+  "help.coverWidth":
+    "Breite des Satinrands, der die Stoffkante der Applikation abdeckt. 3–4 mm decken ausgefranste Kanten sicher ab.",
+  "help.outline":
+    "Umrandung: ein Satinrand in zweiter Farbe rund um die Buchstaben, typisch für Sportschriften.\nSchatten: eine versetzte Kopie in dunklerer Farbe hinter dem Text.",
+  "help.outlineWidth":
+    "Breite der Umrandung bzw. wie weit der Schatten nach rechts unten versetzt ist.",
+  "help.monoLetters":
+    "Zwei oder drei Buchstaben. Beim klassischen Stil wird der mittlere groß gestickt.",
+  "help.monoStyle":
+    "Klassisch: mittlerer Buchstabe groß, äußere kleiner. Gleich groß: alle Buchstaben in einer Höhe.",
+  "help.monoFrame":
+    "Optionaler Satinrahmen um das Monogramm, mit eigener Breite, Abstand und Farbe.",
+  "help.color":
+    "Wähle oben das Garnsortiment und suche nach Nummer oder Name. Mit dem Stern markierst du Garne, die du besitzt; unter „Meine Garne“ siehst du dann nur diese.\nBildschirmfarben sind eine Annäherung, maßgeblich ist die Nummer auf der Spule.",
+  "help.svgColors":
+    "„Farben aus der Datei“ übernimmt die Logofarben, zugeordnet zu deinen Garnen. Einzelne Farben tauschst du, indem du sie anklickst. „Eine Farbe“ stickt das ganze Logo einfarbig.",
+  "help.preview":
+    "Die Vorschau zeigt das Design im 10 × 10 cm Rahmen auf der gewählten Stofffarbe. Sprungfäden sind die Verbindungen, die du nach dem Sticken abschneidest.\n„Design zentrieren“ setzt das ganze Design in die Rahmenmitte.",
+  "help.simulation":
+    "Spielt den Stickablauf Stich für Stich ab. So siehst du vorher, in welcher Reihenfolge gestickt wird, wo Sprünge entstehen und wann die Maschine für einen Farbwechsel anhält.",
+  "help.stats":
+    "Stiche, Größe und ungefähre Stickzeit. Die Garnmengen sind eine Schätzung; sie helfen abzuschätzen, ob eine Spule noch reicht.",
+  "help.sequence":
+    "Reihenfolge der Farben. Bei jedem Wechsel hält die Maschine an und du fädelst die nächste Farbe ein. Weniger Wechsel sparen Zeit: Elemente gleicher Farbe in der Liste nacheinander anordnen.",
+  "help.machine":
+    "Einmalig die PP1 in den Windows-Bluetooth-Einstellungen koppeln. Danach: verbinden, Design senden, Mask Trace (die Maschine fährt den Umriss ab), dann Sticken vorbereiten und an der Maschine Start drücken.\nBei Fehlern zeigt Stichwerk hier die Lösungsschritte.",
+
   "footer.credits":
     "Stichwerk ist freie Software (GPL-3.0) und ein unabhängiges Projekt ohne Verbindung zu Brother oder Madeira.",
 } as const;

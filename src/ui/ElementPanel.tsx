@@ -5,28 +5,35 @@ import { useDesignStore } from "../designer/useDesignStore";
 import { DEFAULT_FONT_ID, fontInfo, isFontAvailable, registerCustomFont } from "../designer/fonts";
 import { FontPicker } from "./FontPicker";
 import { ColorPicker } from "./ColorPicker";
-import type { DesignElement, ShapeKind, StitchMode, TextAlign, TextArc } from "../designer/types";
+import { nearestThread } from "../designer/palette";
+import type { DesignElement, MonogramFrame, ShapeKind, StitchMode, TextAlign, TextArc } from "../designer/types";
 import { Field, Group, NumField, Panel, inputClass } from "./fields";
+import { HelpButton } from "./HelpButton";
+import { PlacementPanel } from "./PlacementPanel";
+import type { GeneratedDesign } from "../engine/compose";
 import { FABRIC_PROFILES, type FabricProfileId } from "../engine/profiles";
 
-const SHAPES: ShapeKind[] = ["heart", "circle", "rect", "star"];
-const MODES: StitchMode[] = ["satin", "fill", "fill-satin", "fill-outline", "outline"];
+const SHAPES: ShapeKind[] = ["heart", "circle", "rect", "star", "diamond"];
+const MODES: StitchMode[] = ["satin", "fill", "fill-satin", "fill-outline", "outline", "applique"];
+const FRAMES: MonogramFrame[] = ["none", "circle", "diamond", "rect"];
 const FABRIC_IDS: FabricProfileId[] = ["jersey", "woven", "canvas"];
 
 function elementLabel(el: DesignElement, t: TFunction): string {
   if (el.kind === "text")
     return t("label.text", { text: el.text.split("\n")[0] || t("label.emptyText") });
   if (el.kind === "svg") return t("label.svg", { name: el.name });
+  if (el.kind === "monogram") return t("label.monogram", { letters: el.letters || "–" });
   return t(`shape.${el.shape}` as TranslationKey);
 }
 
-export function ElementPanel({ onError }: { onError: (msg: string) => void }) {
+export function ElementPanel({ onError, design }: { onError: (msg: string) => void; design: GeneratedDesign }) {
   const t = useT();
   const {
     elements,
     selectedId,
     addText,
     addShape,
+    addMonogram,
     update,
     remove,
     moveInOrder,
@@ -51,6 +58,7 @@ export function ElementPanel({ onError }: { onError: (msg: string) => void }) {
         selectedId: s.selectedId,
         addText: s.addText,
         addShape: s.addShape,
+        addMonogram: s.addMonogram,
         update: s.update,
         remove: s.remove,
         moveInOrder: s.moveInOrder,
@@ -61,7 +69,7 @@ export function ElementPanel({ onError }: { onError: (msg: string) => void }) {
   const selected = elements.find((e) => e.id === selectedId) ?? null;
 
   const handleFontFile = async (file: File | undefined) => {
-    if (!file || !selected || selected.kind !== "text") return;
+    if (!file || !selected || (selected.kind !== "text" && selected.kind !== "monogram")) return;
     try {
       const info = await registerCustomFont(file);
       update(selected.id, { fontId: info.id });
@@ -80,18 +88,20 @@ export function ElementPanel({ onError }: { onError: (msg: string) => void }) {
   const smallText =
     selected?.kind === "text" && selected.mode !== "outline" && selected.height < minHeight;
   const isSatin = selected?.mode === "satin";
+  const isApplique = selected?.mode === "applique";
 
   const changeMode = (el: DesignElement, mode: StitchMode) => {
     // satin wants denser rows than a fill
     let density = el.density;
     if (mode === "satin" && el.mode !== "satin") density = FABRIC_PROFILES[fabric].satinSpacing;
     if (mode !== "satin" && el.mode === "satin") density = 0.4;
-    update(el.id, { mode, density });
+    const borderWidth = mode === "applique" ? Math.max(3, el.borderWidth ?? 3) : el.borderWidth;
+    update(el.id, { mode, density, borderWidth });
   };
 
   return (
     <div className="flex flex-col gap-4">
-      <Panel title={t("fabricProfile.title")}>
+      <Panel title={t("fabricProfile.title")} help="help.fabric">
         <select
           className={inputClass}
           value={fabric}
@@ -107,7 +117,9 @@ export function ElementPanel({ onError }: { onError: (msg: string) => void }) {
         <p className="mt-2 text-xs text-denim-700">{t(`fabricProfile.hint.${fabric}` as TranslationKey)}</p>
       </Panel>
 
-      <Panel title={t("elements.title")}>
+      <PlacementPanel design={design} />
+
+      <Panel title={t("elements.title")} help="help.elements">
         <div className="mb-3 flex gap-2">
           <button
             type="button"
@@ -122,6 +134,13 @@ export function ElementPanel({ onError }: { onError: (msg: string) => void }) {
             className="flex-1 rounded-md bg-denim-900 px-3 py-2 text-sm font-medium text-white hover:bg-denim-700"
           >
             {t("elements.addShape")}
+          </button>
+          <button
+            type="button"
+            onClick={addMonogram}
+            className="flex-1 rounded-md bg-denim-900 px-3 py-2 text-sm font-medium text-white hover:bg-denim-700"
+          >
+            {t("elements.addMonogram")}
           </button>
         </div>
 
@@ -189,18 +208,18 @@ export function ElementPanel({ onError }: { onError: (msg: string) => void }) {
       </Panel>
 
       {selected && (
-        <Panel title={elementLabel(selected, t)}>
+        <Panel title={elementLabel(selected, t)} help={`help.kind.${selected.kind}` as TranslationKey}>
           <div className="flex flex-col gap-3">
             {selected.kind === "text" && (
               <>
-                <Field label={t("edit.text")}>
+                <Field label={t("edit.text")} help="help.text">
                   <textarea
                     className={inputClass + " min-h-16 font-medium"}
                     value={selected.text}
                     onChange={(e) => update(selected.id, { text: e.target.value })}
                   />
                 </Field>
-                <Group label={t("edit.font")}>
+                <Group label={t("edit.font")} help="help.font">
                   <FontPicker
                     value={isFontAvailable(selected.fontId) ? selected.fontId : DEFAULT_FONT_ID}
                     sample={selected.text}
@@ -221,6 +240,7 @@ export function ElementPanel({ onError }: { onError: (msg: string) => void }) {
                 <div className="grid grid-cols-3 gap-2">
                   <NumField
                     label={t("edit.letterHeight")}
+                    help="help.height"
                     value={selected.height}
                     step={0.5}
                     min={3}
@@ -229,12 +249,14 @@ export function ElementPanel({ onError }: { onError: (msg: string) => void }) {
                   />
                   <NumField
                     label={t("edit.letterSpacing")}
+                    help="help.letterSpacing"
                     value={selected.letterSpacing}
                     step={0.1}
                     onChange={(v) => update(selected.id, { letterSpacing: v })}
                   />
                   <NumField
                     label={t("edit.lineSpacing")}
+                    help="help.lineSpacing"
                     value={selected.lineSpacing}
                     step={0.1}
                     min={0.8}
@@ -246,7 +268,7 @@ export function ElementPanel({ onError }: { onError: (msg: string) => void }) {
 
             {selected.kind === "text" && (
               <div className="grid grid-cols-2 gap-2">
-                <Field label={t("edit.arc")}>
+                <Field label={t("edit.arc")} help="help.arc">
                   <select
                     className={inputClass}
                     value={selected.arc ?? "none"}
@@ -260,7 +282,7 @@ export function ElementPanel({ onError }: { onError: (msg: string) => void }) {
                   </select>
                 </Field>
                 {(selected.arc ?? "none") === "none" ? (
-                  <Group label={t("edit.align")}>
+                  <Group label={t("edit.align")} help="help.align">
                     <div className="grid grid-cols-3 overflow-hidden rounded-md ring-1 ring-denim-200">
                       {(["left", "center", "right"] as TextAlign[]).map((a) => (
                         <button
@@ -281,6 +303,7 @@ export function ElementPanel({ onError }: { onError: (msg: string) => void }) {
                 ) : (
                   <NumField
                     label={t("edit.arcRadius")}
+                    help="help.arcRadius"
                     value={selected.arcRadius ?? 40}
                     step={1}
                     min={10}
@@ -291,9 +314,142 @@ export function ElementPanel({ onError }: { onError: (msg: string) => void }) {
               </div>
             )}
 
+            {selected.kind === "text" && !isApplique && (
+              <div className="flex flex-col gap-2">
+                <div className="grid grid-cols-2 gap-2">
+                  <Field label={t("edit.outline")} help="help.outline">
+                    <select
+                      className={inputClass}
+                      value={selected.outlineStyle ?? "none"}
+                      onChange={(e) =>
+                        update(selected.id, {
+                          outlineStyle: e.target.value as "none" | "border" | "shadow",
+                          outlineColor: selected.outlineColor ?? nearestThread("#ffffff").hex,
+                        })
+                      }
+                    >
+                      <option value="none">{t("outline.none")}</option>
+                      <option value="border">{t("outline.border")}</option>
+                      <option value="shadow">{t("outline.shadow")}</option>
+                    </select>
+                  </Field>
+                  {(selected.outlineStyle ?? "none") !== "none" && (
+                    <NumField
+                      label={selected.outlineStyle === "shadow" ? t("edit.shadowOffset") : t("edit.outlineWidth")}
+                      help="help.outlineWidth"
+                      value={selected.outlineWidth ?? 1.5}
+                      step={0.25}
+                      min={0.5}
+                      max={4}
+                      onChange={(v) => update(selected.id, { outlineWidth: Math.min(4, Math.max(0.5, v)) })}
+                    />
+                  )}
+                </div>
+                {(selected.outlineStyle ?? "none") !== "none" && (
+                  <Group label={t("edit.outlineColor")}>
+                    <ColorPicker
+                      value={selected.outlineColor ?? nearestThread("#ffffff").hex}
+                      onPick={(hex) => update(selected.id, { outlineColor: hex })}
+                    />
+                  </Group>
+                )}
+              </div>
+            )}
+
+            {selected.kind === "monogram" && (
+              <>
+                <div className="grid grid-cols-2 gap-2">
+                  <Field label={t("edit.monoLetters")} help="help.monoLetters">
+                    <input
+                      className={inputClass + " font-semibold uppercase tracking-widest"}
+                      value={selected.letters}
+                      maxLength={3}
+                      onChange={(e) => update(selected.id, { letters: e.target.value.toUpperCase().slice(0, 3) })}
+                    />
+                  </Field>
+                  <Field label={t("edit.monoStyle")} help="help.monoStyle">
+                    <select
+                      className={inputClass}
+                      value={selected.style}
+                      onChange={(e) => update(selected.id, { style: e.target.value as "classic" | "equal" })}
+                    >
+                      <option value="classic">{t("mono.classic")}</option>
+                      <option value="equal">{t("mono.equal")}</option>
+                    </select>
+                  </Field>
+                </div>
+                <Group label={t("edit.font")} help="help.font">
+                  <FontPicker
+                    value={isFontAvailable(selected.fontId) ? selected.fontId : DEFAULT_FONT_ID}
+                    sample={selected.letters || "ABC"}
+                    onChange={(id) => update(selected.id, { fontId: id })}
+                    onUpload={() => fontInput.current?.click()}
+                  />
+                </Group>
+                <div className="grid grid-cols-2 gap-2">
+                  <NumField
+                    label={t("edit.letterHeight")}
+                    help="help.height"
+                    value={selected.height}
+                    step={0.5}
+                    min={5}
+                    max={90}
+                    onChange={(v) => update(selected.id, { height: v })}
+                  />
+                  <NumField
+                    label={t("edit.letterSpacing")}
+                    help="help.letterSpacing"
+                    value={selected.letterSpacing}
+                    step={0.5}
+                    onChange={(v) => update(selected.id, { letterSpacing: v })}
+                  />
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <Field label={t("edit.monoFrame")} help="help.monoFrame">
+                    <select
+                      className={inputClass}
+                      value={selected.frame}
+                      onChange={(e) => update(selected.id, { frame: e.target.value as MonogramFrame })}
+                    >
+                      {FRAMES.map((f) => (
+                        <option key={f} value={f}>
+                          {t(`frame.${f}` as TranslationKey)}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+                  {selected.frame !== "none" && (
+                    <>
+                      <NumField
+                        label={t("edit.frameWidth")}
+                        value={selected.frameWidth}
+                        step={0.25}
+                        min={1}
+                        max={5}
+                        onChange={(v) => update(selected.id, { frameWidth: Math.min(5, Math.max(1, v)) })}
+                      />
+                      <NumField
+                        label={t("edit.frameGap")}
+                        value={selected.frameGap}
+                        step={0.5}
+                        min={0}
+                        max={15}
+                        onChange={(v) => update(selected.id, { frameGap: Math.min(15, Math.max(0, v)) })}
+                      />
+                    </>
+                  )}
+                </div>
+                {selected.frame !== "none" && (
+                  <Group label={t("edit.frameColor")}>
+                    <ColorPicker value={selected.frameColor} onPick={(hex) => update(selected.id, { frameColor: hex })} />
+                  </Group>
+                )}
+              </>
+            )}
+
             {selected.kind === "shape" && (
               <>
-                <Field label={t("edit.shape")}>
+                <Field label={t("edit.shape")} help="help.shape">
                   <select
                     className={inputClass}
                     value={selected.shape}
@@ -309,6 +465,7 @@ export function ElementPanel({ onError }: { onError: (msg: string) => void }) {
                 <div className="grid grid-cols-2 gap-2">
                   <NumField
                     label={t("edit.width")}
+                    help="help.size"
                     value={selected.width}
                     min={3}
                     max={100}
@@ -329,6 +486,7 @@ export function ElementPanel({ onError }: { onError: (msg: string) => void }) {
               <div className="grid grid-cols-2 gap-2">
                 <NumField
                   label={t("edit.width")}
+                    help="help.size"
                   value={selected.width}
                   min={5}
                   max={100}
@@ -351,6 +509,7 @@ export function ElementPanel({ onError }: { onError: (msg: string) => void }) {
             <div className="grid grid-cols-2 gap-2">
               <NumField
                 label={t("edit.posX")}
+                help="help.position"
                 value={selected.x}
                 step={0.5}
                 onChange={(v) => update(selected.id, { x: v })}
@@ -366,6 +525,7 @@ export function ElementPanel({ onError }: { onError: (msg: string) => void }) {
             <div className="grid grid-cols-[1fr_auto] items-end gap-2">
               <NumField
                 label={t("edit.rotation")}
+                help="help.rotation"
                 value={selected.rotation ?? 0}
                 step={5}
                 min={-180}
@@ -390,13 +550,13 @@ export function ElementPanel({ onError }: { onError: (msg: string) => void }) {
               </div>
             </div>
 
-            <Field label={t("edit.mode")}>
+            <Field label={t("edit.mode")} help="help.mode">
               <select
                 className={inputClass}
                 value={selected.mode}
                 onChange={(e) => changeMode(selected, e.target.value as StitchMode)}
               >
-                {MODES.map((m) => (
+                {MODES.filter((m) => !(m === "applique" && selected.kind === "monogram")).map((m) => (
                   <option key={m} value={m}>
                     {t(`mode.${m}` as TranslationKey)}
                   </option>
@@ -406,11 +566,27 @@ export function ElementPanel({ onError }: { onError: (msg: string) => void }) {
 
             {isSatin && <p className="text-xs text-denim-700">{t("edit.satinHint")}</p>}
 
-            {selected.mode !== "outline" && (
+            {isApplique && (
+              <div className="flex flex-col gap-2">
+                <p className="rounded-md bg-denim-50 px-2 py-1.5 text-xs text-denim-900">{t("edit.appliqueHint")}</p>
+                <NumField
+                  label={t("edit.coverWidth")}
+                  help="help.coverWidth"
+                  value={selected.borderWidth ?? 3}
+                  step={0.5}
+                  min={2}
+                  max={6}
+                  onChange={(v) => update(selected.id, { borderWidth: Math.min(6, Math.max(2, v)) })}
+                />
+              </div>
+            )}
+
+            {selected.mode !== "outline" && !isApplique && (
               <div className="grid grid-cols-3 items-end gap-2">
                 {!isSatin && (
                   <NumField
                     label={t("edit.angle")}
+                    help="help.angle"
                     value={selected.angle}
                     step={15}
                     onChange={(v) => update(selected.id, { angle: v })}
@@ -418,6 +594,7 @@ export function ElementPanel({ onError }: { onError: (msg: string) => void }) {
                 )}
                 <NumField
                   label={isSatin ? t("edit.satinSpacing") : t("edit.density")}
+                  help={isSatin ? "help.satinSpacing" : "help.density"}
                   value={selected.density}
                   step={0.05}
                   min={isSatin ? 0.2 : 0.3}
@@ -427,6 +604,7 @@ export function ElementPanel({ onError }: { onError: (msg: string) => void }) {
                 {selected.mode === "fill-satin" && (
                   <NumField
                     label={t("edit.borderWidth")}
+                    help="help.borderWidth"
                     value={selected.borderWidth ?? 2}
                     step={0.5}
                     min={1}
@@ -435,6 +613,7 @@ export function ElementPanel({ onError }: { onError: (msg: string) => void }) {
                   />
                 )}
                 <label className="flex items-center gap-2 pb-2 text-xs font-medium text-denim-700">
+                  <HelpButton topic="help.underlay" />
                   <input
                     type="checkbox"
                     className="accent-thread-500"
@@ -453,7 +632,7 @@ export function ElementPanel({ onError }: { onError: (msg: string) => void }) {
             )}
 
             {selected.kind === "svg" && (
-              <Field label={t("svg.colors")}>
+              <Field label={t("svg.colors")} help="help.svgColors">
                 <select
                   className={inputClass}
                   value={selected.singleColor ? "single" : "file"}
@@ -478,7 +657,7 @@ export function ElementPanel({ onError }: { onError: (msg: string) => void }) {
             )}
 
             {(selected.kind !== "svg" || selected.singleColor) && (
-              <Group label={t("edit.color")}>
+              <Group label={t("edit.color")} help="help.color">
                 <ColorPicker value={selected.color} onPick={(hex) => update(selected.id, { color: hex })} />
               </Group>
             )}

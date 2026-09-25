@@ -5,8 +5,8 @@
 
 import type { Pt } from "../engine/geometry";
 
-export type StitchMode = "fill" | "fill-outline" | "fill-satin" | "satin" | "outline";
-export type ShapeKind = "circle" | "rect" | "heart" | "star";
+export type StitchMode = "fill" | "fill-outline" | "fill-satin" | "satin" | "outline" | "applique";
+export type ShapeKind = "circle" | "rect" | "heart" | "star" | "diamond";
 
 export interface BaseElement {
   id: string;
@@ -47,6 +47,30 @@ export interface TextElement extends BaseElement {
   arc?: TextArc;
   /** Radius of the arc in mm. */
   arcRadius?: number;
+  /** Border around the letters in a second colour ("border") or a drop shadow. */
+  outlineStyle?: "none" | "border" | "shadow";
+  /** Width of the border / offset of the shadow in mm. */
+  outlineWidth?: number;
+  outlineColor?: string;
+}
+
+export type MonogramFrame = "none" | "circle" | "diamond" | "rect";
+
+export interface MonogramElement extends BaseElement {
+  kind: "monogram";
+  /** Two or three initials, e.g. "KMH" – the middle one becomes the big one. */
+  letters: string;
+  fontId: string;
+  /** Height of the (middle) letter in mm. */
+  height: number;
+  style: "classic" | "equal";
+  letterSpacing: number;
+  frame: MonogramFrame;
+  frameColor: string;
+  /** Width of the satin frame in mm. */
+  frameWidth: number;
+  /** Gap between letters and frame in mm. */
+  frameGap: number;
 }
 
 export interface ShapeElement extends BaseElement {
@@ -76,4 +100,4 @@ export interface SvgElement extends BaseElement {
   singleColor: boolean;
 }
 
-export type DesignElement = TextElement | ShapeElement | SvgElement;
+export type DesignElement = TextElement | ShapeElement | SvgElement | MonogramElement;

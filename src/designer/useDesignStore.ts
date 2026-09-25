@@ -1,7 +1,8 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { DEFAULT_FONT_ID } from "./fonts";
-import type { DesignElement, ShapeElement, SvgElement, TextElement } from "./types";
+import type { DesignElement, MonogramElement, ShapeElement, SvgElement, TextElement } from "./types";
+import type { PlacementId } from "./placements";
 import type { ImportedSvg } from "../io/svg";
 import { defaultColor, nearestThread } from "./palette";
 import { DEFAULT_FABRIC, type FabricProfileId } from "../engine/profiles";
@@ -14,6 +15,8 @@ interface DesignState {
   elements: DesignElement[];
   fabric: FabricProfileId;
   selectedId: string | null;
+  /** Chosen position on the shirt (only for the placement hint). */
+  placement: PlacementId | null;
   past: DesignElement[][];
   future: DesignElement[][];
   lastKey: string | null;
@@ -22,6 +25,10 @@ interface DesignState {
   setFabric: (fabric: FabricProfileId) => void;
   addText: () => void;
   addShape: () => void;
+  addMonogram: () => void;
+  /** Scale the whole design around (cx, cy), then move that point to the hoop centre. */
+  scaleDesign: (factor: number, cx: number, cy: number) => void;
+  setPlacement: (p: PlacementId | null) => void;
   addSvg: (svg: ImportedSvg, name: string) => void;
   /** `key`: edits with the same key close together become one undo step. */
   update: (id: string, patch: Partial<DesignElement>, key?: string) => void;
@@ -68,6 +75,7 @@ export const useDesignStore = create<DesignState>()(
     (set) => ({
       elements: [],
       selectedId: null,
+      placement: null,
       fabric: DEFAULT_FABRIC,
       past: [],
       future: [],
@@ -110,6 +118,50 @@ export const useDesignStore = create<DesignState>()(
           };
           return { ...record(s), elements: [...s.elements, el], selectedId: el.id };
         }),
+
+      addMonogram: () =>
+        set((s) => {
+          const color = defaultColor();
+          const el: MonogramElement = {
+            ...fillDefaults(),
+            id: newId(),
+            kind: "monogram",
+            letters: "ABC",
+            fontId: "cinzel-800",
+            height: 18,
+            style: "classic",
+            letterSpacing: 1,
+            frame: "circle",
+            frameColor: color,
+            frameWidth: 1.6,
+            frameGap: 2,
+            angle: 0,
+            mode: "satin",
+            density: 0.3,
+          };
+          return { ...record(s), elements: [...s.elements, el], selectedId: el.id };
+        }),
+
+      scaleDesign: (f, cx, cy) =>
+        set((s) => {
+          const r = (v: number) => Math.round(v * 10) / 10;
+          const elements = s.elements.map((e): DesignElement => {
+            const pos = { x: r((e.x - cx) * f), y: r((e.y - cy) * f) };
+            switch (e.kind) {
+              case "text":
+                return { ...e, ...pos, height: r(e.height * f), letterSpacing: r(e.letterSpacing * f), arcRadius: r((e.arcRadius ?? 40) * f) };
+              case "shape":
+                return { ...e, ...pos, width: r(e.width * f), height: r(e.height * f) };
+              case "svg":
+                return { ...e, ...pos, width: r(e.width * f) };
+              case "monogram":
+                return { ...e, ...pos, height: r(e.height * f), frameGap: r(e.frameGap * f) };
+            }
+          });
+          return { ...record(s), elements };
+        }),
+
+      setPlacement: (placement) => set({ placement }),
 
       addSvg: (svg, name) =>
         set((s) => {
@@ -215,7 +267,12 @@ export const useDesignStore = create<DesignState>()(
     {
       name: "stichwerk-design",
       // the undo history is not stored between visits
-      partialize: (s) => ({ elements: s.elements, selectedId: s.selectedId, fabric: s.fabric }),
+      partialize: (s) => ({
+        elements: s.elements,
+        selectedId: s.selectedId,
+        fabric: s.fabric,
+        placement: s.placement,
+      }),
     },
   ),
 );

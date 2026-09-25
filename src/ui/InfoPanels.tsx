@@ -1,5 +1,5 @@
 import type { GeneratedDesign } from "../engine/compose";
-import { useLang, useT } from "../i18n";
+import { useLang, useT, type TranslationKey } from "../i18n";
 import { colorLabel } from "../designer/palette";
 import { designStats } from "../engine/stats";
 import { useMemo } from "react";
@@ -21,7 +21,7 @@ export function InfoPanels({ design, fitsHoop }: { design: GeneratedDesign; fits
     <div className="flex flex-col gap-4">
       <MachinePanel design={design} fitsHoop={fitsHoop} />
       {count > 0 && (
-        <Panel>
+        <Panel title={t("stats.title")} help="help.stats">
           <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
             <dd className="font-display text-base text-denim-900">{t("stats.stitches", { n: fmt(count) })}</dd>
             <dd className="font-display text-base text-denim-900">
@@ -46,7 +46,7 @@ export function InfoPanels({ design, fitsHoop }: { design: GeneratedDesign; fits
       )}
 
       {design.blockColors.length > 0 && (
-        <Panel title={t("sequence.title")}>
+        <Panel title={t("sequence.title")} help="help.sequence">
           <ol className="flex flex-col gap-1.5 text-sm">
             {stats.blocks.map((b, i) => (
               <li key={i} className="flex items-start gap-2">
@@ -55,6 +55,9 @@ export function InfoPanels({ design, fitsHoop }: { design: GeneratedDesign; fits
                 <span className="min-w-0">
                   {colorLabel(b.color)}
                   <span className="block text-xs text-denim-700">
+                    {design.blockNotes[i] && (
+                      <span className="mr-1 font-medium text-thread-600">{t(`noteShort.${design.blockNotes[i]}` as TranslationKey)} ·</span>
+                    )}
                     {t("sequence.detail", { n: fmt(b.stitches), m: fmt(b.threadM, 1) })}
                   </span>
                 </span>

@@ -102,14 +102,14 @@ export function MachinePanel({ design, fitsHoop }: { design: GeneratedDesign; fi
 
   if (!m.supported)
     return (
-      <Panel title={t("machine.title")}>
+      <Panel title={t("machine.title")} help="help.machine">
         <Hint>{t("machine.unsupported")}</Hint>
       </Panel>
     );
 
   if (!m.isConnected)
     return (
-      <Panel title={t("machine.title")}>
+      <Panel title={t("machine.title")} help="help.machine">
         <div className="flex flex-col gap-3">
           <p className="text-sm text-denim-700">{t("machine.intro")}</p>
           {problem}
@@ -130,13 +130,14 @@ export function MachinePanel({ design, fitsHoop }: { design: GeneratedDesign; fi
   const nextBlock =
     block && m.uploaded ? m.uploaded.colorBlocks.find((b) => b.startStitch > block.endStitch) : undefined;
   const nextColor = nextBlock ? m.uploaded?.blockColors[nextBlock.colorIndex] : currentColor;
+  const nextNote = nextBlock ? m.uploaded?.blockNotes?.[nextBlock.colorIndex] : null;
   const changed = !!m.uploaded && m.uploaded.key !== designKey(design.stitches);
   const err = hasMachineError(m.errorCode) ? machineErrorInfo(m.errorCode, lang) : null;
   const statusText = t(`status.${m.status}` as TranslationKey);
   const fmt = (n: number) => n.toLocaleString(lang === "de" ? "de-AT" : "en-GB");
 
   return (
-    <Panel title={t("machine.title")}>
+    <Panel title={t("machine.title")} help="help.machine">
       <div className="flex flex-col gap-3">
         <div className="flex items-center gap-2 text-sm">
           <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" aria-hidden />
@@ -181,7 +182,7 @@ export function MachinePanel({ design, fitsHoop }: { design: GeneratedDesign; fi
               <ActionButton
                 onClick={async () => {
                   if (hasPattern) await actions.deletePattern();
-                  await actions.upload(design.stitches, design.blockColors);
+                  await actions.upload(design.stitches, design.blockColors, design.blockNotes);
                 }}
                 disabled={design.stitches.length < 2 || !fitsHoop || hasMachineError(m.errorCode)}
               >
@@ -238,7 +239,9 @@ export function MachinePanel({ design, fitsHoop }: { design: GeneratedDesign; fi
         )}
 
         {m.status === MachineStatus.COLOR_CHANGE_WAIT && (
-          <Hint tone="warn">{t("machine.colorChange", { color: colorLabel(nextColor) })}</Hint>
+          <Hint tone="warn">
+            {nextNote ? t(`note.${nextNote}` as TranslationKey) : t("machine.colorChange", { color: colorLabel(nextColor) })}
+          </Hint>
         )}
 
         {canStepStitches(m.status, hasProgress) && (

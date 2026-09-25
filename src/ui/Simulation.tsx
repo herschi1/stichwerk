@@ -8,7 +8,8 @@ import type { GeneratedDesign } from "../engine/compose";
 import { designStats } from "../engine/stats";
 import { MOVE } from "../engine/constants";
 import { colorLabel } from "../designer/palette";
-import { useLang, useT } from "../i18n";
+import { HelpButton } from "./HelpButton";
+import { useLang, useT, type TranslationKey } from "../i18n";
 
 /** Stitches per second for each speed step. */
 const SPEEDS = [20, 80, 300, 1200];
@@ -122,10 +123,11 @@ export function SimulationBar({ sim, design }: { sim: Simulation; design: Genera
 
   if (!sim.active)
     return (
-      <div>
+      <div className="flex items-center gap-2">
         <button type="button" className={btn} disabled={total < 2} onClick={sim.start}>
           ▶ {t("sim.start")}
         </button>
+        <HelpButton topic="help.simulation" />
       </div>
     );
 
@@ -191,9 +193,9 @@ export function SimulationBar({ sim, design }: { sim: Simulation; design: Genera
       </div>
       {atColorChange && (
         <p className="rounded-md bg-thread-100 px-2 py-1.5 text-sm text-denim-950">
-          {t("sim.colorChange", {
-            name: colorLabel(design.blockColors[design.stitches[sim.index][3]]),
-          })}
+          {design.blockNotes[design.stitches[sim.index][3]]
+            ? t(`note.${design.blockNotes[design.stitches[sim.index][3]]}` as TranslationKey)
+            : t("sim.colorChange", { name: colorLabel(design.blockColors[design.stitches[sim.index][3]]) })}
         </p>
       )}
     </div>

@@ -183,7 +183,7 @@ export function App() {
       {showInfo && <InfoDialog onClose={() => setShowInfo(false)} />}
       <main className="grid flex-1 gap-4 overflow-auto p-4 lg:grid-cols-[360px_1fr_280px] lg:overflow-hidden">
         <div className="lg:overflow-y-auto lg:pr-1">
-          <ElementPanel onError={setError} />
+          <ElementPanel onError={setError} design={design} />
         </div>
         <Preview
           design={design}

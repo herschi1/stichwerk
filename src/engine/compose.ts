@@ -5,7 +5,7 @@
 
 import type opentype from "opentype.js";
 import { MOVE, STITCH } from "./constants";
-import type { DesignElement } from "../designer/types";
+import type { DesignElement, MonogramElement, TextElement } from "../designer/types";
 import {
   type Pt,
   type Region,
@@ -13,11 +13,13 @@ import {
   emptyBBox,
   extendBBox,
   segmentInside,
+  regionBBox,
   rotateRegion,
   translateRegion,
 } from "./geometry";
 import { tatamiFill } from "./fill";
 import { satinBorder, satinFill } from "./satin";
+import { offsetRegions, unionRegions } from "./offset";
 import { DEFAULT_FABRIC, FABRIC_PROFILES, type FabricProfile, type FabricProfileId } from "./profiles";
 import { beanStitch, runAroundRing } from "./running";
 import { shapeRegion } from "./shapes";
@@ -118,30 +120,146 @@ interface Part {
   fillRule: "nonzero" | "evenodd";
 }
 
-/** Parts of an element centred on (0,0), before rotation and positioning. */
-function localParts(el: DesignElement, fonts: Map<string, opentype.Font>): Part[] {
+/** Stops that need an instruction instead of a thread change. */
+export type BlockNote = "applique.place" | "applique.trim";
+
+type SewMethod =
+  | "element"
+  | "border"
+  | "shadow"
+  | "frame"
+  | "applique-place"
+  | "applique-tack"
+  | "applique-cover";
+
+/** One sewing step of an element: what to sew, in which colour and how. */
+interface Step {
+  parts: Part[];
+  color: string;
+  method: SewMethod;
+  /** Start a new colour block (machine stops) even if the colour stays the same. */
+  stop?: BlockNote;
+  /** Keep the order of the parts (SVG layers). */
+  ordered?: boolean;
+  /** Band width for border/frame/cover methods (mm). */
+  width?: number;
+}
+
+const nz = "nonzero" as const;
+
+function textRegions(el: { text: string; height: number; letterSpacing: number; lineSpacing: number } & Partial<TextElement>, font: opentype.Font): Region[] {
+  return layoutText(font, {
+    text: el.text,
+    height: el.height,
+    letterSpacing: el.letterSpacing,
+    lineSpacing: el.lineSpacing,
+    align: el.align,
+    arc: el.arc,
+    arcRadius: el.arcRadius,
+  });
+}
+
+/** Monogram: letters side by side (middle one larger), optional satin frame. */
+function monogramLayout(el: MonogramElement, font: opentype.Font): { letters: Region[]; frame: Region | null } {
+  const chars = [...el.letters.replace(/\s+/g, "")].slice(0, 3);
+  if (!chars.length) return { letters: [], frame: null };
+  const heights = chars.map((_, i) =>
+    el.style === "classic" && chars.length === 3 && i !== 1 ? el.height * 0.65 : el.height,
+  );
+  const glyphs = chars.map((ch, i) =>
+    textRegions({ text: ch, height: heights[i], letterSpacing: 0, lineSpacing: 1 }, font),
+  );
+  const widths = glyphs.map((g) => {
+    const bb = regionBBox(g);
+    return isFinite(bb.minX) ? bb.maxX - bb.minX : 0;
+  });
+  const total = widths.reduce((a, w) => a + w, 0) + el.letterSpacing * (chars.length - 1);
+  let x = -total / 2;
+  const letters: Region[] = [];
+  glyphs.forEach((g, i) => {
+    const cx = x + widths[i] / 2;
+    for (const r of g) letters.push(translateRegion(r, cx, 0));
+    x += widths[i] + el.letterSpacing;
+  });
+  if (el.frame === "none") return { letters, frame: null };
+  const bb = regionBBox(letters);
+  const w = bb.maxX - bb.minX;
+  const h = bb.maxY - bb.minY;
+  const g = el.frameGap + el.frameWidth;
+  let frame: Region;
+  if (el.frame === "circle") {
+    const d = Math.max(w, h) * 1.08 + 2 * g;
+    frame = shapeRegion("circle", d, d);
+  } else if (el.frame === "diamond") {
+    const d = w + h + 2.8 * g;
+    frame = shapeRegion("diamond", d, d);
+  } else frame = shapeRegion("rect", w + 2 * g, h + 2 * g);
+  return { letters, frame };
+}
+
+/** Steps of an element in its own coordinates (centred on 0,0, unrotated). */
+function localSteps(el: DesignElement, fonts: Map<string, opentype.Font>): Step[] {
+  const one = (region: Region, color = el.color): Part => ({ region, color, fillRule: nz });
+
+  let base: Part[] = [];
+  let ordered = false;
   if (el.kind === "text") {
     const font = fonts.get(el.fontId);
     if (!font || !el.text.trim()) return [];
-    return layoutText(font, {
-      text: el.text,
-      height: el.height,
-      letterSpacing: el.letterSpacing,
-      lineSpacing: el.lineSpacing,
-      align: el.align,
-      arc: el.arc,
-      arcRadius: el.arcRadius,
-    }).map((r) => ({ region: r, color: el.color, fillRule: "nonzero" }));
+    base = textRegions(el, font).map((r) => one(r));
+  } else if (el.kind === "shape") {
+    base = [one(shapeRegion(el.shape, el.width, el.height))];
+  } else if (el.kind === "svg") {
+    const scale = el.width / (el.sourceWidth || 1);
+    ordered = true;
+    base = el.parts.map((part) => ({
+      region: part.rings.map((ring) => ring.map((p) => [p[0] * scale, p[1] * scale] as Pt)),
+      color: el.singleColor ? el.color : part.color,
+      fillRule: part.fillRule,
+    }));
+  } else {
+    const font = fonts.get(el.fontId);
+    if (!font) return [];
+    const { letters, frame } = monogramLayout(el, font);
+    const steps: Step[] = [];
+    if (frame) steps.push({ parts: [one(frame, el.frameColor)], color: el.frameColor, method: "frame", width: el.frameWidth });
+    if (letters.length) steps.push({ parts: letters.map((r) => one(r)), color: el.color, method: "element" });
+    return steps;
   }
-  if (el.kind === "shape") {
-    return [{ region: shapeRegion(el.shape, el.width, el.height), color: el.color, fillRule: "nonzero" }];
+  if (!base.length) return [];
+
+  // Appliqué: placement line, stop, tack-down, stop (trim), satin cover.
+  if (el.mode === "applique") {
+    const whole = unionRegions(base.map((p) => p.region));
+    const part = [one(whole)];
+    return [
+      { parts: part, color: el.color, method: "applique-place" },
+      { parts: part, color: el.color, method: "applique-tack", stop: "applique.place" },
+      { parts: part, color: el.color, method: "applique-cover", stop: "applique.trim", width: el.borderWidth ?? 3 },
+    ];
   }
-  const scale = el.width / (el.sourceWidth || 1);
-  return el.parts.map((part) => ({
-    region: part.rings.map((ring) => ring.map((p) => [p[0] * scale, p[1] * scale] as Pt)),
-    color: el.singleColor ? el.color : part.color,
-    fillRule: part.fillRule,
-  }));
+
+  const steps: Step[] = [];
+  if (el.kind === "text" && el.outlineStyle && el.outlineStyle !== "none") {
+    const w = el.outlineWidth ?? 1.5;
+    const color = el.outlineColor ?? "#ffffff";
+    if (el.outlineStyle === "border") {
+      steps.push({ parts: [one(offsetRegions(base.map((p) => p.region), w), color)], color, method: "border", width: w });
+    } else {
+      const shadow = base.map((p) => translateRegion(p.region, w, w));
+      steps.push({ parts: [one(unionRegions(shadow), color)], color, method: "shadow" });
+    }
+  }
+  // Parts of different colours (SVG) become separate steps, in document order.
+  let cur: Step | null = null;
+  for (const p of base) {
+    if (!cur || cur.color !== p.color) {
+      cur = { parts: [], color: p.color, method: "element", ordered };
+      steps.push(cur);
+    }
+    cur.parts.push(p);
+  }
+  return steps;
 }
 
 /** Size of an element before rotation (mm), used for selection handles. */
@@ -150,22 +268,28 @@ export interface ElementBox {
   h: number;
 }
 
-function elementParts(
+function elementSteps(
   el: DesignElement,
   fonts: Map<string, opentype.Font>,
-): { parts: Part[]; box: ElementBox } {
-  const local = localParts(el, fonts);
+): { steps: Step[]; box: ElementBox } {
+  const local = localSteps(el, fonts);
   const bb = emptyBBox();
-  for (const part of local) for (const ring of part.region) for (const p of ring) extendBBox(bb, p);
+  for (const st of local) for (const part of st.parts) for (const ring of part.region) for (const p of ring) extendBBox(bb, p);
   const box = isFinite(bb.minX)
-    ? { w: Math.max(bb.maxX - bb.minX, 2 * Math.max(bb.maxX, -bb.minX)), h: Math.max(bb.maxY - bb.minY, 2 * Math.max(bb.maxY, -bb.minY)) }
+    ? {
+        w: Math.max(bb.maxX - bb.minX, 2 * Math.max(bb.maxX, -bb.minX)),
+        h: Math.max(bb.maxY - bb.minY, 2 * Math.max(bb.maxY, -bb.minY)),
+      }
     : { w: 0, h: 0 };
   const rad = ((el.rotation ?? 0) * Math.PI) / 180;
-  const parts = local.map((part) => ({
-    ...part,
-    region: translateRegion(rad ? rotateRegion(part.region, rad) : part.region, el.x, el.y),
+  const steps = local.map((st) => ({
+    ...st,
+    parts: st.parts.map((part) => ({
+      ...part,
+      region: translateRegion(rad ? rotateRegion(part.region, rad) : part.region, el.x, el.y),
+    })),
   }));
-  return { parts, box };
+  return { steps, box };
 }
 
 /** Outline stitch length: shorter for small letters so curves stay round. */
@@ -253,6 +377,55 @@ function sewRegion(
   }
 }
 
+/** Sew one step: parts nearest-first (or in order), with the step's method. */
+function sewStep(b: StitchBuilder, step: Step, el: DesignElement, fabric: FabricProfile) {
+  const todo = [...step.parts];
+  while (todo.length) {
+    let idx = 0;
+    const pos = b.position;
+    if (pos && !step.ordered) {
+      let best = Infinity;
+      todo.forEach((part, i) => {
+        for (const ring of part.region)
+          for (const p of ring) {
+            const d = dist(p, pos);
+            if (d < best) [best, idx] = [d, i];
+          }
+      });
+    }
+    const part = todo.splice(idx, 1)[0];
+    const area = { region: part.region, rule: part.fillRule };
+    const satinOpts = { spacing: fabric.satinSpacing, pullComp: fabric.pullComp, fillRule: part.fillRule };
+    switch (step.method) {
+      case "element":
+        sewRegion(b, part.region, el, part.fillRule, fabric);
+        break;
+      case "shadow":
+        sewRegion(b, part.region, { ...el, mode: "fill", angle: 45 } as DesignElement, part.fillRule, fabric);
+        break;
+      case "border":
+      case "frame":
+        // satin band along the outline, a little wider so it tucks under the letters
+        for (const s of satinBorder(part.region, (step.width ?? 1.5) + (step.method === "border" ? 0.4 : 0), satinOpts, b.position))
+          b.stroke(s, area);
+        break;
+      case "applique-place":
+        for (const ring of part.region) b.stroke(runAroundRing(ring, 2.5, b.position));
+        break;
+      case "applique-tack": {
+        const inner = offsetRegions([part.region], -0.6);
+        for (const ring of inner.length ? inner : part.region) b.stroke(runAroundRing(ring, 2, b.position));
+        break;
+      }
+      case "applique-cover": {
+        const outer = offsetRegions([part.region], 0.6);
+        for (const s of satinBorder(outer, (step.width ?? 3) + 0.6, satinOpts, b.position)) b.stroke(s);
+        break;
+      }
+    }
+  }
+}
+
 export interface GeneratedDesign {
   stitches: number[][];
   /** Jumps that were replaced by hidden travel stitches. */
@@ -261,6 +434,8 @@ export interface GeneratedDesign {
   boxes: Record<string, ElementBox>;
   /** One colour per colour block, in sewing order. */
   blockColors: string[];
+  /** Instruction for blocks that start with a stop other than a thread change. */
+  blockNotes: (BlockNote | null)[];
   /** Size of the stitched area in mm. */
   width: number;
   height: number;
@@ -274,35 +449,18 @@ export function generateStitches(
   const fabric = FABRIC_PROFILES[fabricId] ?? FABRIC_PROFILES[DEFAULT_FABRIC];
   const b = new StitchBuilder();
   const blockColors: string[] = [];
+  const blockNotes: (BlockNote | null)[] = [];
   const boxes: Record<string, ElementBox> = {};
   for (const el of elements) {
-    const { parts, box } = elementParts(el, fonts);
+    const { steps, box } = elementSteps(el, fonts);
     boxes[el.id] = box;
-    // Text glyphs and shapes are sewn nearest-first; SVG parts keep their
-    // document order because later shapes are meant to lie on top.
-    const todo = [...parts];
-    while (todo.length) {
-      let idx = 0;
-      const pos = b.position;
-      if (pos && el.kind !== "svg") {
-        let best = Infinity;
-        todo.forEach((part, i) => {
-          for (const ring of part.region)
-            for (const p of ring) {
-              const d = dist(p, pos);
-              if (d < best) {
-                best = d;
-                idx = i;
-              }
-            }
-        });
-      }
-      const part = todo.splice(idx, 1)[0];
-      if (blockColors[blockColors.length - 1] !== part.color) {
-        blockColors.push(part.color);
+    for (const step of steps) {
+      if (step.stop || blockColors[blockColors.length - 1] !== step.color) {
+        blockColors.push(step.color);
+        blockNotes.push(step.stop ?? null);
         b.setColorBlock(blockColors.length - 1);
       }
-      sewRegion(b, part.region, el, part.fillRule, fabric);
+      sewStep(b, step, el, fabric);
     }
   }
   const box = emptyBBox();
@@ -314,6 +472,7 @@ export function generateStitches(
     boxes,
     travels: b.travels,
     blockColors,
+    blockNotes,
     width: empty ? 0 : box.maxX - box.minX,
     height: empty ? 0 : box.maxY - box.minY,
   };

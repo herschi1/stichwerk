@@ -276,6 +276,173 @@ export const en: Record<TranslationKey, string> = {
   "info.imprint.purpose":
     "Basic purpose: private, non-commercial website offering a tool for designing embroidery patterns.",
 
+  "help.button":
+    "Help",
+  "elements.addMonogram":
+    "+ Monogram",
+  "label.monogram":
+    "Monogram: {letters}",
+  "shape.diamond":
+    "Diamond",
+  "mode.applique":
+    "Appliqué (sewn-on fabric)",
+  "stats.title":
+    "Embroidery data",
+  "edit.appliqueHint":
+    "The machine first sews a placement line and stops. Lay the fabric piece on it and press start. It is then tacked down and the machine stops again: trim the excess fabric close to the seam. Finally the satin border is sewn.",
+  "edit.coverWidth":
+    "Border width (mm)",
+  "edit.outline":
+    "Border around text",
+  "outline.none":
+    "No border",
+  "outline.border":
+    "Outline",
+  "outline.shadow":
+    "Shadow",
+  "edit.outlineWidth":
+    "Border width (mm)",
+  "edit.shadowOffset":
+    "Offset (mm)",
+  "edit.outlineColor":
+    "Border / shadow colour",
+  "edit.monoLetters":
+    "Initials",
+  "edit.monoStyle":
+    "Style",
+  "mono.classic":
+    "Classic (large middle)",
+  "mono.equal":
+    "Equal size",
+  "edit.monoFrame":
+    "Frame",
+  "frame.none":
+    "None",
+  "frame.circle":
+    "Circle",
+  "frame.diamond":
+    "Diamond",
+  "frame.rect":
+    "Rectangle",
+  "edit.frameWidth":
+    "Frame (mm)",
+  "edit.frameGap":
+    "Gap (mm)",
+  "edit.frameColor":
+    "Frame colour",
+  "placement.title":
+    "Position on the shirt",
+  "placement.none":
+    "No template",
+  "placement.max":
+    "max. {w} × {h} cm",
+  "placement.fit":
+    "Fit size",
+  "placement.chestLeft":
+    "Left chest logo",
+  "placement.chestCenter":
+    "Centre chest",
+  "placement.kidsChest":
+    "Kids' shirt chest",
+  "placement.neck":
+    "Back of neck",
+  "placement.sleeve":
+    "Sleeve",
+  "placement.chestLeft.how":
+    "Guide value for adults: on the left chest as seen from the front (the wearer's heart side). Centre of the design about 18–20 cm below the point where collar and shoulder seam meet, and about 9–10 cm from the centre front.",
+  "placement.chestCenter.how":
+    "Guide value for adults: centred on the front, top edge of the design about 7–10 cm below the collar.",
+  "placement.kidsChest.how":
+    "Guide value: centred on the front, top edge of the design about 5–7 cm below the collar.",
+  "placement.neck.how":
+    "Centred on the back, top edge of the design about 2–3 cm below the collar seam. Keep it narrow, otherwise the fabric puckers.",
+  "placement.sleeve.how":
+    "On the outside of the sleeve, centred on the sleeve seam, top edge about 8–10 cm below the shoulder seam. The sleeve must lie flat in the hoop without tension.",
+  "note.applique.place":
+    "Appliqué: now lay the fabric piece so it fully covers the sewn placement line, then press start on the machine.",
+  "note.applique.trim":
+    "Appliqué: do not remove the hoop! Trim the excess fabric close to the tack-down seam, then press start for the satin border.",
+  "noteShort.applique.place":
+    "Place fabric",
+  "noteShort.applique.trim":
+    "Trim fabric",
+  "help.fabric":
+    "Choose the fabric you embroider on. Stichwerk then adjusts pull compensation, underlay and satin density.\nStretchy jersey (T-shirts) needs more underlay and cut-away stabilizer, firm fabric less.",
+  "help.placement":
+    "Choose where the design goes on the shirt. “Fit size” scales the whole design to a suitable size and moves it to the hoop centre.\nBelow you see where to mark the design on the shirt. The measurements are guide values for adult shirts.",
+  "help.elements":
+    "Add text, shapes and monograms here. Elements are sewn from top to bottom in this list; use ↑ ↓ to change the order.\n↶ ↷ undo and redo, ⧉ duplicates the selected element.",
+  "help.kind.text":
+    "A piece of lettering. All settings below apply to this text only. In the preview you can move, rotate and resize it directly.",
+  "help.kind.shape":
+    "A basic shape such as a heart or star. As a fill, with a border or as appliqué with sewn-on fabric.",
+  "help.kind.svg":
+    "A logo imported from an SVG file. Each colour area becomes its own embroidery area; you can swap colours individually.",
+  "help.kind.monogram":
+    "Two or three initials, classically with a large middle letter, optionally framed. In a classic monogram the middle letter is usually the initial of the surname.",
+  "help.text":
+    "The text to embroider. Press Enter to start a new line.",
+  "help.font":
+    "The list shows every font with your text. “from … mm” is the smallest letter height at which the font still sews cleanly.\nAt the very bottom you can load your own font files.",
+  "help.height":
+    "Height of a capital letter in millimetres. Lower case letters and descenders follow from it.\n8–20 mm is typical for T-shirts.",
+  "help.letterSpacing":
+    "Extra space between letters in mm. A little more space (0.3–1 mm) keeps letters from running together when sewn. Leave script fonts at 0 so the letters stay connected.",
+  "help.lineSpacing":
+    "Distance between lines as a multiple of the letter height. 1.5 is a good start.",
+  "help.arc":
+    "Puts the text on a circular arc: “upwards” bends like a rainbow, “downwards” like a smile. Typical for college and club logos.",
+  "help.align":
+    "Aligns multi-line text left, centred or right.",
+  "help.arcRadius":
+    "Radius of the circle the text sits on. Small radius = strong curve, large radius = gentle arc.",
+  "help.shape":
+    "The basic shape. Set width and height below or drag the corners in the preview.",
+  "help.size":
+    "Size in millimetres. The PP1 hoop is 10 × 10 cm.",
+  "help.position":
+    "Position of the element's centre, measured from the hoop centre. It is easier to move it in the preview or with the arrow keys.",
+  "help.rotation":
+    "Clockwise rotation in degrees. In the preview, rotate with the circle above the selection box; hold Shift for 15° steps.",
+  "help.mode":
+    "How the area is sewn.\nSatin: glossy, ideal for lettering and narrow shapes up to 7 mm.\nFill: for larger areas.\nWith outline or satin border: clean edges.\nOutline only: triple running stitch, good for very small text.\nAppliqué: a sewn-on piece of fabric with a satin border.",
+  "help.angle":
+    "Direction of the stitch rows in a fill. Different angles on neighbouring areas make them catch the light differently.",
+  "help.density":
+    "Distance between fill rows. Smaller = denser and more opaque, but stiffer. 0.4 mm is a good default; rather 0.45 on thin jersey.",
+  "help.satinSpacing":
+    "Distance between satin stitches. Smaller = smoother and glossier, but more stitches. 0.25–0.35 mm is typical.",
+  "help.underlay":
+    "A loose layer of stitches under the actual area. It holds the fabric and stops it from showing through. Almost always leave it on.",
+  "help.borderWidth":
+    "Width of the satin border around the area in mm.",
+  "help.coverWidth":
+    "Width of the satin border covering the edge of the appliqué fabric. 3–4 mm reliably cover frayed edges.",
+  "help.outline":
+    "Outline: a satin border in a second colour around the letters, typical for sports lettering.\nShadow: an offset copy in a darker colour behind the text.",
+  "help.outlineWidth":
+    "Width of the outline, or how far the shadow is shifted to the lower right.",
+  "help.monoLetters":
+    "Two or three letters. In the classic style the middle one is sewn large.",
+  "help.monoStyle":
+    "Classic: middle letter large, outer ones smaller. Equal size: all letters the same height.",
+  "help.monoFrame":
+    "Optional satin frame around the monogram, with its own width, gap and colour.",
+  "help.color":
+    "Choose the thread range at the top and search by number or name. Mark threads you own with the star; “My threads” then shows only those.\nScreen colours are approximations; the number on the spool is what counts.",
+  "help.svgColors":
+    "“Colours from the file” keeps the logo colours, matched to your threads. Click a colour to swap it. “One colour” sews the whole logo in a single colour.",
+  "help.preview":
+    "The preview shows the design in the 10 × 10 cm hoop on the chosen fabric colour. Jump threads are the connections you trim after sewing.\n“Centre design” moves the whole design to the hoop centre.",
+  "help.simulation":
+    "Plays the sewing order back stitch by stitch. You see beforehand in which order it is sewn, where jumps occur and when the machine stops for a colour change.",
+  "help.stats":
+    "Stitches, size and approximate sewing time. The thread amounts are an estimate to judge whether a spool is still enough.",
+  "help.sequence":
+    "Order of the colours. At every change the machine stops and you thread the next colour. Fewer changes save time: put same-coloured elements next to each other in the list.",
+  "help.machine":
+    "Pair the PP1 once in the Windows Bluetooth settings. Then: connect, send the design, mask trace (the machine traces the outline), prepare sewing and press start on the machine.\nIf something goes wrong, Stichwerk shows the steps to fix it here.",
+
   "footer.credits":
     "Stichwerk is free software (GPL-3.0) and an independent project, not affiliated with Brother or Madeira.",
 };
