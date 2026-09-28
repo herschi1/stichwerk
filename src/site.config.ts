@@ -7,7 +7,7 @@
  * beiden Felder leer sind, wird der Abschnitt in der Info-Seite ausgeblendet.
  */
 export const SITE = {
-  /** Name der Medieninhaberin, z. B. "Herschmann Christian" */
+  /** Name der Medieninhabers, z. B. "Herschmann Christian" */
   ownerName: "Herschmann Christian",
   /** Wohnort, z. B. "Feldkirch, Österreich" */
   ownerLocation: "Feldkirch, Österreich",
