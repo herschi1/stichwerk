@@ -34,4 +34,13 @@ Frosted Matt sind Marken der Madeira Garnfabrik. Die Namen werden nur beschreibe
 - **Schriften / Fonts** – 30 Google-Fonts-Schriften unter SIL Open Font License 1.1 bzw.
   Apache License 2.0, Übersicht / overview: `public/fonts/FONTS.md`.
 
+- **Hershey-Linienschriften / Hershey line fonts** – ursprünglich von Dr. A. V. Hershey
+  (U.S. National Bureau of Standards, gemeinfrei / public domain), SVG-Fassung von James Hurt
+  und Windell H. Oskay (evilmadscientist.com), vertrieben über das npm-Paket „hersheytext“ –
+  MIT License (`public/fonts/stroke/LICENSE-Hershey-EMS.txt`). Verwendet für die
+  Ein-Strich-Schriften / used for the single-stroke line fonts (`public/fonts/stroke/*.json`).
+
+- **clipper-lib** – © Angus Johnson – Boost Software License 1.0 (`LICENSES/BSL-1.0-clipper-lib.txt`). Polygon-Offset/-Union für
+  Satinränder, Textumrandungen und Applikationen (`src/engine/offset.ts`).
+
 - **opentype.js** – MIT License; **React**, **zustand** – MIT License (npm-Abhängigkeiten).
