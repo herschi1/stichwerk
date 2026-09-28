@@ -2,7 +2,8 @@ import { useRef, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { useT, type TFunction, type TranslationKey } from "../i18n";
 import { useDesignStore } from "../designer/useDesignStore";
-import { DEFAULT_FONT_ID, fontInfo, isFontAvailable, registerCustomFont } from "../designer/fonts";
+import { DEFAULT_FONT_ID, anyFontInfo, isFontAvailable, registerCustomFont } from "../designer/fonts";
+import { isStrokeFont } from "../designer/strokeFonts";
 import { FontPicker } from "./FontPicker";
 import { ColorPicker } from "./ColorPicker";
 import { nearestThread } from "../designer/palette";
@@ -78,17 +79,21 @@ export function ElementPanel({ onError, design }: { onError: (msg: string) => vo
     }
   };
 
+  const isStrokeText = selected?.kind === "text" && isStrokeFont(selected.fontId);
   // Each font has a minimum height below which satin/fill gets messy.
+  // Line fonts are sewn as a thin stroke, so their own (lower) minimum applies directly.
   const minHeight =
     selected?.kind === "text"
-      ? selected.mode === "satin"
-        ? fontInfo(selected.fontId).minHeight
-        : Math.max(7, fontInfo(selected.fontId).minHeight)
+      ? isStrokeText || selected.mode === "satin"
+        ? anyFontInfo(selected.fontId).minHeight
+        : Math.max(7, anyFontInfo(selected.fontId).minHeight)
       : 0;
   const smallText =
-    selected?.kind === "text" && selected.mode !== "outline" && selected.height < minHeight;
+    selected?.kind === "text" &&
+    (isStrokeText || selected.mode !== "outline") &&
+    selected.height < minHeight;
   const isSatin = selected?.mode === "satin";
-  const isApplique = selected?.mode === "applique";
+  const isApplique = selected?.mode === "applique" && !isStrokeText;
 
   const changeMode = (el: DesignElement, mode: StitchMode) => {
     // satin wants denser rows than a fill
@@ -266,7 +271,31 @@ export function ElementPanel({ onError, design }: { onError: (msg: string) => vo
               </>
             )}
 
-            {selected.kind === "text" && (
+            {selected.kind === "text" && isStrokeText && (
+              <>
+                <p className="rounded-md bg-denim-50 px-2 py-1.5 text-xs text-denim-900">{t("edit.strokeFontHint")}</p>
+                <Group label={t("edit.align")} help="help.align">
+                  <div className="grid grid-cols-3 overflow-hidden rounded-md ring-1 ring-denim-200">
+                    {(["left", "center", "right"] as TextAlign[]).map((a) => (
+                      <button
+                        key={a}
+                        type="button"
+                        aria-pressed={(selected.align ?? "center") === a}
+                        onClick={() => update(selected.id, { align: a })}
+                        className={
+                          "py-1.5 text-xs " +
+                          ((selected.align ?? "center") === a ? "bg-denim-900 text-white" : "bg-white hover:bg-denim-50")
+                        }
+                      >
+                        {t(`align.${a}` as TranslationKey)}
+                      </button>
+                    ))}
+                  </div>
+                </Group>
+              </>
+            )}
+
+            {selected.kind === "text" && !isStrokeText && (
               <div className="grid grid-cols-2 gap-2">
                 <Field label={t("edit.arc")} help="help.arc">
                   <select
@@ -314,7 +343,7 @@ export function ElementPanel({ onError, design }: { onError: (msg: string) => vo
               </div>
             )}
 
-            {selected.kind === "text" && !isApplique && (
+            {selected.kind === "text" && !isApplique && !isStrokeText && (
               <div className="flex flex-col gap-2">
                 <div className="grid grid-cols-2 gap-2">
                   <Field label={t("edit.outline")} help="help.outline">
@@ -384,6 +413,7 @@ export function ElementPanel({ onError, design }: { onError: (msg: string) => vo
                     sample={selected.letters || "ABC"}
                     onChange={(id) => update(selected.id, { fontId: id })}
                     onUpload={() => fontInput.current?.click()}
+                    allowStroke={false}
                   />
                 </Group>
                 <div className="grid grid-cols-2 gap-2">
@@ -550,19 +580,21 @@ export function ElementPanel({ onError, design }: { onError: (msg: string) => vo
               </div>
             </div>
 
-            <Field label={t("edit.mode")} help="help.mode">
-              <select
-                className={inputClass}
-                value={selected.mode}
-                onChange={(e) => changeMode(selected, e.target.value as StitchMode)}
-              >
-                {MODES.filter((m) => !(m === "applique" && selected.kind === "monogram")).map((m) => (
-                  <option key={m} value={m}>
-                    {t(`mode.${m}` as TranslationKey)}
-                  </option>
-                ))}
-              </select>
-            </Field>
+            {!isStrokeText && (
+              <Field label={t("edit.mode")} help="help.mode">
+                <select
+                  className={inputClass}
+                  value={selected.mode}
+                  onChange={(e) => changeMode(selected, e.target.value as StitchMode)}
+                >
+                  {MODES.filter((m) => !(m === "applique" && selected.kind === "monogram")).map((m) => (
+                    <option key={m} value={m}>
+                      {t(`mode.${m}` as TranslationKey)}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+            )}
 
             {isSatin && <p className="text-xs text-denim-700">{t("edit.satinHint")}</p>}
 
@@ -581,7 +613,7 @@ export function ElementPanel({ onError, design }: { onError: (msg: string) => vo
               </div>
             )}
 
-            {selected.mode !== "outline" && !isApplique && (
+            {selected.mode !== "outline" && !isApplique && !isStrokeText && (
               <div className="grid grid-cols-3 items-end gap-2">
                 {!isSatin && (
                   <NumField

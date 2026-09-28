@@ -5,6 +5,7 @@
 
 import opentype from "opentype.js";
 import { create } from "zustand";
+import { STROKE_FONTS, isStrokeFont, strokeFontInfo } from "./strokeFonts";
 
 export type FontCategory =
   | "bold"
@@ -14,6 +15,7 @@ export type FontCategory =
   | "script"
   | "hand"
   | "display"
+  | "stroke"
   | "custom";
 
 export interface FontInfo {
@@ -76,6 +78,7 @@ export const FONT_CATEGORIES: FontCategory[] = [
   "script",
   "hand",
   "display",
+  "stroke",
   "custom",
 ];
 
@@ -98,7 +101,8 @@ export const useCustomFonts = create<CustomFontState>((set) => ({
 export function isFontAvailable(id: string): boolean {
   return (
     BUNDLED_FONTS.some((f) => f.id === id) ||
-    useCustomFonts.getState().customFonts.some((f) => f.id === id)
+    useCustomFonts.getState().customFonts.some((f) => f.id === id) ||
+    STROKE_FONTS.some((f) => f.id === id)
   );
 }
 
@@ -142,6 +146,12 @@ export function fontInfo(id: string): FontInfo {
     useCustomFonts.getState().customFonts.find((x) => x.id === id) ??
     BUNDLED_FONTS[0]
   );
+}
+
+/** Like fontInfo(), but also covers the single-stroke line fonts. */
+export function anyFontInfo(id: string): { id: string; name: string; category: FontCategory; minHeight: number } {
+  if (isStrokeFont(id)) return strokeFontInfo(id);
+  return fontInfo(id);
 }
 
 /** CSS font-family name used for previews in the font picker. */

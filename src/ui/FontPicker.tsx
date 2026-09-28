@@ -3,25 +3,29 @@ import { useT, type TranslationKey } from "../i18n";
 import {
   BUNDLED_FONTS,
   FONT_CATEGORIES,
+  anyFontInfo,
   cssFontFamily,
-  fontInfo,
   loadPreviewFaces,
   useCustomFonts,
 } from "../designer/fonts";
+import { STROKE_FONTS, isStrokeFont } from "../designer/strokeFonts";
+import { StrokeFontPreview } from "./StrokeFontPreview";
 
 interface Props {
   value: string;
   sample: string;
   onChange: (id: string) => void;
   onUpload: () => void;
+  /** Monograms need real glyph outlines for the satin frame math, so line fonts are hidden there. */
+  allowStroke?: boolean;
 }
 
-export function FontPicker({ value, sample, onChange, onUpload }: Props) {
+export function FontPicker({ value, sample, onChange, onUpload, allowStroke = true }: Props) {
   const t = useT();
   const customFonts = useCustomFonts((s) => s.customFonts);
   const [open, setOpen] = useState(false);
   const box = useRef<HTMLDivElement>(null);
-  const current = fontInfo(value);
+  const current = anyFontInfo(value);
   const text = sample.split("\n")[0].trim().slice(0, 18) || "Abc";
 
   // Load the font files for the previews once, and also the current one right away.
@@ -43,7 +47,7 @@ export function FontPicker({ value, sample, onChange, onUpload }: Props) {
     };
   }, [open]);
 
-  const all = [...BUNDLED_FONTS, ...customFonts];
+  const all = [...BUNDLED_FONTS, ...customFonts, ...(allowStroke ? STROKE_FONTS : [])];
 
   return (
     <div ref={box} className="relative">
@@ -55,9 +59,13 @@ export function FontPicker({ value, sample, onChange, onUpload }: Props) {
         className="flex w-full items-center justify-between gap-2 rounded-md border border-denim-200 bg-white px-2 py-1.5 text-left hover:border-denim-500"
       >
         <span className="min-w-0">
-          <span className="block truncate text-xl leading-tight" style={{ fontFamily: `${cssFontFamily(current.id)}, sans-serif` }}>
-            {text}
-          </span>
+          {isStrokeFont(current.id) ? (
+            <StrokeFontPreview fontId={current.id} text={text} className="block text-ink" />
+          ) : (
+            <span className="block truncate text-xl leading-tight" style={{ fontFamily: `${cssFontFamily(current.id)}, sans-serif` }}>
+              {text}
+            </span>
+          )}
           <span className="block truncate text-xs text-denim-700">{current.name}</span>
         </span>
         <span aria-hidden className="text-denim-500">
@@ -94,12 +102,16 @@ export function FontPicker({ value, sample, onChange, onUpload }: Props) {
                       (f.id === value ? "bg-thread-100" : "hover:bg-denim-50")
                     }
                   >
-                    <span
-                      className="min-w-0 truncate text-2xl leading-snug text-ink"
-                      style={{ fontFamily: `${cssFontFamily(f.id)}, sans-serif` }}
-                    >
-                      {text}
-                    </span>
+                    {isStrokeFont(f.id) ? (
+                      <StrokeFontPreview fontId={f.id} text={text} className="min-w-0 text-ink" />
+                    ) : (
+                      <span
+                        className="min-w-0 truncate text-2xl leading-snug text-ink"
+                        style={{ fontFamily: `${cssFontFamily(f.id)}, sans-serif` }}
+                      >
+                        {text}
+                      </span>
+                    )}
                     <span className="flex-shrink-0 text-right text-[11px] leading-tight text-denim-700">
                       {f.name}
                       <br />

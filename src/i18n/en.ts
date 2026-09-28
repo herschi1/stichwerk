@@ -41,7 +41,10 @@ export const en: Record<TranslationKey, string> = {
   "font.cat.script": "Script",
   "font.cat.hand": "Handwriting",
   "font.cat.display": "Display & college",
+  "font.cat.stroke": "Line fonts (engraving)",
   "font.cat.custom": "Your fonts",
+  "edit.strokeFontHint":
+    "Line font: sewn as a thin single stitch line, not filled. Great for very small or delicate lettering. Stitch mode, fill and outline settings don't apply here.",
   "edit.text": "Text (Enter for a new line)",
   "edit.font": "Font",
   "edit.fontUpload": "Load your own font (TTF/OTF/WOFF) …",
@@ -197,6 +200,12 @@ export const en: Record<TranslationKey, string> = {
   "machine.err.disconnected": "The connection to the machine was lost.",
   "machine.err.upload": "Sending failed: {detail}",
   "machine.err.command": "The machine did not accept the command: {detail}",
+  "machine.btn.startStop": "Start/Stop button",
+  "machine.btn.accept": "Accept button",
+  "machine.btn.bluetooth": "Bluetooth button",
+  "machine.btn.needle": "Needle-position button",
+  "machine.btn.thread": "Thread it",
+  "machine.btn.cutter": "Thread cutter",
 
   "status.0": "Starting",
   "status.1": "Bobbin thread",

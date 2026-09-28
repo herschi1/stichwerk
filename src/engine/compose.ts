@@ -24,6 +24,8 @@ import { DEFAULT_FABRIC, FABRIC_PROFILES, type FabricProfile, type FabricProfile
 import { beanStitch, runAroundRing } from "./running";
 import { shapeRegion } from "./shapes";
 import { layoutText } from "./text";
+import { layoutStrokeText } from "./strokeText";
+import { isStrokeFont, type StrokeFontData } from "../designer/strokeFonts";
 
 /** Gaps shorter than this are sewn through instead of jumped. */
 const DIRECT_CONNECT_MM = 1.0;
@@ -130,7 +132,8 @@ type SewMethod =
   | "frame"
   | "applique-place"
   | "applique-tack"
-  | "applique-cover";
+  | "applique-cover"
+  | "stroke-text";
 
 /** One sewing step of an element: what to sew, in which colour and how. */
 interface Step {
@@ -198,8 +201,26 @@ function monogramLayout(el: MonogramElement, font: opentype.Font): { letters: Re
 }
 
 /** Steps of an element in its own coordinates (centred on 0,0, unrotated). */
-function localSteps(el: DesignElement, fonts: Map<string, opentype.Font>): Step[] {
+function localSteps(
+  el: DesignElement,
+  fonts: Map<string, opentype.Font>,
+  strokeFonts: Map<string, StrokeFontData>,
+): Step[] {
   const one = (region: Region, color = el.color): Part => ({ region, color, fillRule: nz });
+
+  if (el.kind === "text" && isStrokeFont(el.fontId)) {
+    const font = strokeFonts.get(el.fontId);
+    if (!font || !el.text.trim()) return [];
+    const strokes = layoutStrokeText(font, {
+      text: el.text,
+      height: el.height,
+      letterSpacing: el.letterSpacing,
+      lineSpacing: el.lineSpacing,
+      align: el.align,
+    });
+    if (!strokes.length) return [];
+    return [{ parts: [one(strokes)], color: el.color, method: "stroke-text", ordered: true }];
+  }
 
   let base: Part[] = [];
   let ordered = false;
@@ -271,8 +292,9 @@ export interface ElementBox {
 function elementSteps(
   el: DesignElement,
   fonts: Map<string, opentype.Font>,
+  strokeFonts: Map<string, StrokeFontData>,
 ): { steps: Step[]; box: ElementBox } {
-  const local = localSteps(el, fonts);
+  const local = localSteps(el, fonts, strokeFonts);
   const bb = emptyBBox();
   for (const st of local) for (const part of st.parts) for (const ring of part.region) for (const p of ring) extendBBox(bb, p);
   const box = isFinite(bb.minX)
@@ -422,6 +444,9 @@ function sewStep(b: StitchBuilder, step: Step, el: DesignElement, fabric: Fabric
         for (const s of satinBorder(outer, (step.width ?? 3) + 0.6, satinOpts, b.position)) b.stroke(s);
         break;
       }
+      case "stroke-text":
+        for (const stroke of part.region) if (stroke.length >= 2) b.stroke(beanStitch(stroke));
+        break;
     }
   }
 }
@@ -445,6 +470,7 @@ export function generateStitches(
   elements: DesignElement[],
   fonts: Map<string, opentype.Font>,
   fabricId: FabricProfileId = DEFAULT_FABRIC,
+  strokeFonts: Map<string, StrokeFontData> = new Map(),
 ): GeneratedDesign {
   const fabric = FABRIC_PROFILES[fabricId] ?? FABRIC_PROFILES[DEFAULT_FABRIC];
   const b = new StitchBuilder();
@@ -452,7 +478,7 @@ export function generateStitches(
   const blockNotes: (BlockNote | null)[] = [];
   const boxes: Record<string, ElementBox> = {};
   for (const el of elements) {
-    const { steps, box } = elementSteps(el, fonts);
+    const { steps, box } = elementSteps(el, fonts, strokeFonts);
     boxes[el.id] = box;
     for (const step of steps) {
       if (step.stop || blockColors[blockColors.length - 1] !== step.color) {

@@ -39,7 +39,10 @@ export const de = {
   "font.cat.script": "Schreibschrift",
   "font.cat.hand": "Handschrift",
   "font.cat.display": "Deko & College",
+  "font.cat.stroke": "Linienschriften (Gravur)",
   "font.cat.custom": "Eigene Schriften",
+  "edit.strokeFontHint":
+    "Linienschrift: wird als dünne Laufstich-Linie gestickt, nicht gefüllt. Ideal für sehr kleine oder feine Schriftzüge. Stickart, Füllung und Umrandung entfallen dafür.",
   "edit.text": "Text (Enter für neue Zeile)",
   "edit.font": "Schrift",
   "edit.fontUpload": "Eigene Schrift laden (TTF/OTF/WOFF) …",
@@ -195,6 +198,12 @@ export const de = {
   "machine.err.disconnected": "Die Verbindung zur Maschine wurde getrennt.",
   "machine.err.upload": "Das Senden ist fehlgeschlagen: {detail}",
   "machine.err.command": "Die Maschine hat den Befehl nicht angenommen: {detail}",
+  "machine.btn.startStop": "Start/Stopp-Taste",
+  "machine.btn.accept": "Bestätigungstaste",
+  "machine.btn.bluetooth": "Bluetooth-Taste",
+  "machine.btn.needle": "Nadelposition-Taste",
+  "machine.btn.thread": "Einfädeln",
+  "machine.btn.cutter": "Fadenschere",
 
   "status.0": "Startet",
   "status.1": "Unterfaden",

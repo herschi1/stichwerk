@@ -4,6 +4,7 @@ import { generateStitches, type GeneratedDesign } from "../engine/compose";
 import type { DesignElement } from "./types";
 import type { FabricProfileId } from "../engine/profiles";
 import { loadFont, useCustomFonts } from "./fonts";
+import { isStrokeFont, loadStrokeFont, type StrokeFontData } from "./strokeFonts";
 
 const EMPTY: GeneratedDesign = { stitches: [], travels: 0, boxes: {}, blockColors: [], blockNotes: [], width: 0, height: 0 };
 
@@ -18,10 +19,13 @@ export function useGeneratedDesign(elements: DesignElement[], fabric: FabricProf
     const timer = window.setTimeout(async () => {
       try {
         const fonts = new Map<string, opentype.Font>();
+        const strokeFonts = new Map<string, StrokeFontData>();
         for (const el of elements)
-          if ((el.kind === "text" || el.kind === "monogram") && !fonts.has(el.fontId))
+          if (el.kind === "text" && isStrokeFont(el.fontId) && !strokeFonts.has(el.fontId))
+            strokeFonts.set(el.fontId, await loadStrokeFont(el.fontId));
+          else if ((el.kind === "text" || el.kind === "monogram") && !isStrokeFont(el.fontId) && !fonts.has(el.fontId))
             fonts.set(el.fontId, await loadFont(el.fontId));
-        const result = generateStitches(elements, fonts, fabric);
+        const result = generateStitches(elements, fonts, fabric, strokeFonts);
         if (!cancelled) {
           setDesign(result);
           setError(null);

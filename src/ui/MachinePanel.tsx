@@ -16,6 +16,22 @@ import {
 } from "../machine/errors";
 import { colorLabel } from "../designer/palette";
 import { Panel } from "./fields";
+import { MachineIcon, MachineButtonTag, type MachineButton } from "./MachineIcons";
+
+const LEGEND_BUTTONS: MachineButton[] = ["startStop", "accept", "bluetooth", "thread", "needle", "cutter"];
+
+/** A line of instructional text with the physical machine button(s) it refers to, tagged at the end. */
+function WithButtons({ children, buttons }: { children: ReactNode; buttons: MachineButton[] }) {
+  const t = useT();
+  return (
+    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+      <span>{children}</span>
+      {buttons.map((b) => (
+        <MachineButtonTag key={b} button={b} label={t(`machine.btn.${b}` as TranslationKey)} />
+      ))}
+    </div>
+  );
+}
 
 function ActionButton({
   children,
@@ -42,6 +58,21 @@ function ActionButton({
     >
       {children}
     </button>
+  );
+}
+
+/** Small reference row: icon + name for every physical button used in the hints below. */
+function MachineLegend() {
+  const t = useT();
+  return (
+    <div className="flex flex-wrap gap-x-3 gap-y-1.5 rounded-md bg-denim-50 px-3 py-2 text-xs text-denim-800">
+      {LEGEND_BUTTONS.map((b) => (
+        <span key={b} className="inline-flex items-center gap-1">
+          <MachineIcon button={b} className="h-4 w-4 flex-shrink-0 text-denim-700" />
+          {t(`machine.btn.${b}` as TranslationKey)}
+        </span>
+      ))}
+    </div>
   );
 }
 
@@ -114,7 +145,10 @@ export function MachinePanel({ design, fitsHoop }: { design: GeneratedDesign; fi
           <p className="text-sm text-denim-700">{t("machine.intro")}</p>
           {problem}
           <ActionButton onClick={actions.connect} disabled={m.isConnecting}>
-            {m.isConnecting ? t("machine.connecting") : t("machine.connect")}
+            <span className="inline-flex items-center justify-center gap-2">
+              <MachineIcon button="bluetooth" className="h-4 w-4" />
+              {m.isConnecting ? t("machine.connecting") : t("machine.connect")}
+            </span>
           </ActionButton>
         </div>
       </Panel>
@@ -140,13 +174,17 @@ export function MachinePanel({ design, fitsHoop }: { design: GeneratedDesign; fi
     <Panel title={t("machine.title")} help="help.machine">
       <div className="flex flex-col gap-3">
         <div className="flex items-center gap-2 text-sm">
-          <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" aria-hidden />
+          <span className="relative flex h-4 w-4 flex-shrink-0 items-center justify-center">
+            <MachineIcon button="bluetooth" className="h-4 w-4 text-emerald-600" />
+            <span className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden />
+          </span>
           <span className="flex-1 truncate">{t("machine.connected", { model: m.info?.modelNumber || "PP1" })}</span>
           <button type="button" onClick={actions.disconnect} className="text-xs text-denim-500 underline">
             {t("machine.disconnect")}
           </button>
         </div>
         <p className="text-xs text-denim-700">{t("machine.status", { status: statusText })}</p>
+        <MachineLegend />
         {problem}
 
         {err && (
@@ -204,7 +242,11 @@ export function MachinePanel({ design, fitsHoop }: { design: GeneratedDesign; fi
             </ActionButton>
           </>
         )}
-        {m.status === MachineStatus.MASK_TRACE_LOCK_WAIT && <Hint>{t("machine.maskTraceWait")}</Hint>}
+        {m.status === MachineStatus.MASK_TRACE_LOCK_WAIT && (
+          <Hint>
+            <WithButtons buttons={["accept"]}>{t("machine.maskTraceWait")}</WithButtons>
+          </Hint>
+        )}
         {m.status === MachineStatus.MASK_TRACING && <Hint>{t("machine.maskTracing")}</Hint>}
 
         {/* Sewing */}
@@ -213,7 +255,9 @@ export function MachinePanel({ design, fitsHoop }: { design: GeneratedDesign; fi
             <ActionButton onClick={actions.startSewing}>
               {canResume(m.status) ? t("machine.resume") : t("machine.startSewing")}
             </ActionButton>
-            <p className="text-xs text-denim-700">{t("machine.startSewingHint")}</p>
+            <p className="text-xs text-denim-700">
+              <WithButtons buttons={["startStop"]}>{t("machine.startSewingHint")}</WithButtons>
+            </p>
           </>
         )}
 
@@ -240,7 +284,17 @@ export function MachinePanel({ design, fitsHoop }: { design: GeneratedDesign; fi
 
         {m.status === MachineStatus.COLOR_CHANGE_WAIT && (
           <Hint tone="warn">
-            {nextNote ? t(`note.${nextNote}` as TranslationKey) : t("machine.colorChange", { color: colorLabel(nextColor) })}
+            <WithButtons
+              buttons={
+                nextNote === "applique.trim"
+                  ? ["cutter", "startStop"]
+                  : nextNote === "applique.place"
+                    ? ["startStop"]
+                    : ["thread", "startStop"]
+              }
+            >
+              {nextNote ? t(`note.${nextNote}` as TranslationKey) : t("machine.colorChange", { color: colorLabel(nextColor) })}
+            </WithButtons>
           </Hint>
         )}
 
