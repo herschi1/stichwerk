@@ -279,7 +279,7 @@ export const de = {
   "info.imprint.title":
     "Offenlegung gemäß § 25 Mediengesetz",
   "info.imprint.owner":
-    "Medieninhaberin",
+    "Medieninhaber",
   "info.imprint.purpose":
     "Grundlegende Richtung: private, nicht kommerzielle Website mit einem Werkzeug zum Gestalten von Stickmustern.",
 
